@@ -1,0 +1,6 @@
+node_modules/
+.env
+Data/
+exported-videos/
+.DS_Store
+*.log

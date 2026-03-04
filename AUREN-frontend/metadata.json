@@ -1,0 +1,5 @@
+{
+  "name": "ChannelCore CMS",
+  "description": "Internal content management system for TV channel project metadata and asset rendering.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUREN — Dashboard</title>
+    <meta name="description" content="AUREN Render Backend Dashboard — Monitor and control After Effects render pipeline">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════
+           DESIGN TOKENS
+           ═══════════════════════════════════════════════ */
+        :root {
+            --bg-primary: #06080f;
+            --bg-secondary: #0c1120;
+            --bg-card: rgba(14, 20, 40, 0.7);
+            --bg-card-hover: rgba(22, 32, 60, 0.8);
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --border-glass: rgba(255, 255, 255, 0.06);
+            --border-glow: rgba(59, 130, 246, 0.25);
+
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --accent-dark: #2563eb;
+            --accent-glow: rgba(59, 130, 246, 0.15);
+
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #8b5cf6;
+
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            --shadow-glow: 0 0 30px rgba(59, 130, 246, 0.08);
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ═══════════════════════════════════════════════
+           RESET & BASE
+           ═══════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated gradient mesh background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 50% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 50%);
+            z-index: 0;
+            pointer-events: none;
+            animation: meshShift 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes meshShift {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* ═══════════════════════════════════════════════
+           LAYOUT
+           ═══════════════════════════════════════════════ */
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 32px 40px;
+        }
+
+        /* ═══════════════════════════════════════════════
+           HEADER
+           ═══════════════════════════════════════════════ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .header-left { display: flex; align-items: center; gap: 16px; }
+
+        .logo {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+            letter-spacing: -0.5px;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-title span {
+            background: linear-gradient(135deg, var(--accent-light), #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .header-right { display: flex; align-items: center; gap: 20px; }
+
+        .connection-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 100px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--error);
+            transition: background 0.3s;
+        }
+
+        .connection-badge.connected .connection-dot {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .uptime-badge {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+        }
+
+        /* ═══════════════════════════════════════════════
+           GRID LAYOUT
+           ═══════════════════════════════════════════════ */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .grid-full { grid-column: 1 / -1; }
+
+        /* ═══════════════════════════════════════════════
+           CARD BASE
+           ═══════════════════════════════════════════════ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-card), var(--shadow-glow);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        /* ═══════════════════════════════════════════════
+           SERVER STATUS PANEL
+           ═══════════════════════════════════════════════ */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .status-item {
+            padding: 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            transition: all 0.3s;
+        }
+
+        .status-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--border-glow);
+        }
+
+        .status-label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            word-break: break-all;
+        }
+
+        .status-value.success { color: var(--success); }
+        .status-value.error { color: var(--error); }
+        .status-value.warning { color: var(--warning); }
+
+        /* ═══════════════════════════════════════════════
+           PROJECTS PANEL
+           ═══════════════════════════════════════════════ */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .project-card {
+            padding: 20px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .project-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .project-card:hover::before { opacity: 1; }
+
+        .project-slug {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            position: relative;
+        }
+
+        .project-ratio {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 100px;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-light);
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: relative;
+        }
+
+        .project-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .project-stat {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .project-stat strong {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-render {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+            width: 100%;
+            justify-content: center;
+            box-shadow: 0 2px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-render:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-render:active { transform: translateY(0); }
+
+        .btn-render:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-clear {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 8px 16px;
+        }
+
+        .btn-clear:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .no-projects {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .no-projects-icon { font-size: 32px; margin-bottom: 12px; }
+
+        /* ═══════════════════════════════════════════════
+           RENDER STATUS PANEL
+           ═══════════════════════════════════════════════ */
+        .render-panel { position: relative; }
+
+        .render-idle {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .render-idle-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .render-active { position: relative; }
+
+        .render-project-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .render-started {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-bottom: 20px;
+        }
+
+        .render-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 20px;
+        }
+
+        .badge-rendering {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-light);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-completed {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-failed, .badge-crashed {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-starting {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* Progress bar */
+        .progress-container {
+            margin-bottom: 20px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .progress-step-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .progress-percentage {
+            font-size: 13px;
+            font-family: var(--font-mono);
+            font-weight: 600;
+            color: var(--accent-light);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 100px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #8b5cf6);
+            border-radius: 100px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        /* Step indicators */
+        .pipeline-steps {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .pipeline-step {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 6px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .pipeline-step.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--accent-light);
+        }
+
+        .pipeline-step.done {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+
+        .render-elapsed {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-top: 12px;
+        }
+
+        .render-elapsed strong { color: var(--text-secondary); }
+
+        .render-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-glass);
+        }
+
+        /* ═══════════════════════════════════════════════
+           LOG CONSOLE
+           ═══════════════════════════════════════════════ */
+        .log-console {
+            background: #05070d;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-top: 24px;
+        }
+
+        .log-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .log-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-controls { display: flex; gap: 8px; align-items: center; }
+
+        .log-toggle {
+            padding: 5px 12px;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: var(--font-sans);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .log-toggle:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+        }
+
+        .log-toggle.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--accent-light);
+        }
+
+        .log-count {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .log-body {
+            height: 280px;
+            overflow-y: auto;
+            padding: 12px 0;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .log-body::-webkit-scrollbar { width: 6px; }
+        .log-body::-webkit-scrollbar-track { background: transparent; }
+        .log-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        .log-line {
+            padding: 2px 20px;
+            display: flex;
+            gap: 12px;
+            transition: background 0.15s;
+        }
+
+        .log-line:hover { background: rgba(255, 255, 255, 0.02); }
+
+        .log-time {
+            color: var(--text-muted);
+            flex-shrink: 0;
+            min-width: 85px;
+            opacity: 0.6;
+        }
+
+        .log-msg { color: var(--text-secondary); word-break: break-all; }
+        .log-line.log-error .log-msg { color: var(--error); }
+        .log-line.log-warn .log-msg { color: var(--warning); }
+        .log-line.log-info .log-msg { color: var(--text-secondary); }
+
+        .log-empty {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* ═══════════════════════════════════════════════
+           ANIMATIONS
+           ═══════════════════════════════════════════════ */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+
+        .animate-in:nth-child(2) { animation-delay: 0.05s; }
+        .animate-in:nth-child(3) { animation-delay: 0.1s; }
+        .animate-in:nth-child(4) { animation-delay: 0.15s; }
+
+        /* ═══════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════ */
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+            .app { padding: 16px; }
+            .header { flex-direction: column; gap: 12px; align-items: flex-start; }
+            .pipeline-steps { gap: 3px; }
+            .pipeline-step { min-width: 60px; font-size: 9px; padding: 8px 4px; }
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: var(--accent-light);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 14px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            color: var(--text-primary);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.toast-error { border-color: rgba(239,68,68,0.3); }
+        .toast.toast-success { border-color: rgba(34,197,94,0.3); }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- ══════ HEADER ══════ -->
+        <header class="header animate-in">
+            <div class="header-left">
+                <div class="logo">A</div>
+                <div>
+                    <div class="header-title"><span>AUREN</span> Dashboard</div>
+                    <div class="header-subtitle">After Effects Render Pipeline</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="uptime-badge" id="uptimeBadge">--:--:--</div>
+                <div class="connection-badge" id="connectionBadge">
+                    <div class="connection-dot"></div>
+                    <span id="connectionText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ══════ GRID ══════ -->
+        <div class="grid">
+            <!-- Server Status -->
+            <div class="card animate-in">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="card-title-icon">⚙️</span>
+                        Server Status
+                    </div>
+                </div>
+                <div class="status-grid" id="serverStatusGrid">
+                    <div class="status-item">
+                        <div class="status-label">Port</div>
+                        <div class="status-value" id="statusPort">—</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Started</div>
+                        <div class="status-value" id="statusStarted">—</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">After Effects</div>
+                        <div class="status-value" id="statusAE">—</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Data Dir</div>
+                        <div class="status-value" id="statusDataDir" style="font-size:11px;">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Render Status -->
+            <div class="card animate-in render-panel">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="card-title-icon">🎬</span>
+                        Render Status
+                    </div>
+                    <div id="renderBadgeContainer"></div>
+                </div>
+                <div id="renderContent">
+                    <div class="render-idle">
+                        <div class="render-idle-icon">💤</div>
+                        No render in progress
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects (full width) -->
+        <div class="card animate-in" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="card-title-icon">📁</span>
+                    Projects
+                </div>
+                <button class="log-toggle" id="refreshProjectsBtn" onclick="fetchProjects()">↻ Refresh</button>
+            </div>
+            <div class="projects-grid" id="projectsGrid">
+                <div class="no-projects">
+                    <div class="no-projects-icon">📂</div>
+                    Loading projects...
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Console -->
+        <div class="log-console animate-in">
+            <div class="log-header">
+                <div class="log-title">
+                    <span>▸</span>
+                    Live Console
+                </div>
+                <div class="log-controls">
+                    <span class="log-count" id="logCount">0 entries</span>
+                    <button class="log-toggle" id="autoScrollBtn" onclick="toggleAutoScroll()">Auto-scroll</button>
+                    <button class="log-toggle" onclick="clearLogs()">Clear</button>
+                </div>
+            </div>
+            <div class="log-body" id="logBody">
+                <div class="log-empty">Waiting for logs...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ═══════════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════════
+        const API_BASE = window.location.origin;
+        let connected = false;
+        let autoScroll = true;
+        let lastLogId = 0;
+        let displayedLogs = [];
+        let renderStartTime = null;
+        let elapsedInterval = null;
+
+        const STEP_LABELS = [
+            'Validate',
+            'Read Data',
+            'Prepare AEP',
+            'Gen Script',
+            'Fill Data',
+            'Rendering',
+            'Done'
+        ];
+
+        // ═══════════════════════════════════════════════
+        // UTILITIES
+        // ═══════════════════════════════════════════════
+        function $(id) { return document.getElementById(id); }
+
+        function showToast(msg, type = 'info') {
+            const el = $('toast');
+            el.textContent = msg;
+            el.className = 'toast show' + (type === 'error' ? ' toast-error' : type === 'success' ? ' toast-success' : '');
+            setTimeout(() => el.className = 'toast', 3000);
+        }
+
+        function formatUptime(ms) {
+            const s = Math.floor(ms / 1000);
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const sec = s % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+
+        function formatTime(iso) {
+            const d = new Date(iso);
+            return d.toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        function formatDateTime(iso) {
+            const d = new Date(iso);
+            return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
+        async function api(path) {
+            const res = await fetch(API_BASE + path);
+            return res.json();
+        }
+
+        async function apiPost(path, body = {}) {
+            const res = await fetch(API_BASE + path, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            return res.json();
+        }
+
+        // ═══════════════════════════════════════════════
+        // SERVER INFO
+        // ═══════════════════════════════════════════════
+        let serverStartTime = null;
+
+        async function fetchServerInfo() {
+            try {
+                const data = await api('/api/server/info');
+                if (data.success) {
+                    connected = true;
+                    serverStartTime = new Date(data.startedAt).getTime();
+
+                    $('connectionBadge').className = 'connection-badge connected';
+                    $('connectionText').textContent = 'Connected';
+                    $('statusPort').textContent = data.port;
+                    $('statusStarted').textContent = formatDateTime(data.startedAt);
+                    $('statusStarted').style.fontSize = '13px';
+
+                    const aeEl = $('statusAE');
+                    if (data.aeInstalled) {
+                        aeEl.textContent = 'Installed ✓';
+                        aeEl.className = 'status-value success';
+                    } else {
+                        aeEl.textContent = 'Not Found';
+                        aeEl.className = 'status-value error';
+                    }
+
+                    const dirEl = $('statusDataDir');
+                    // show just the last 2 segments
+                    const parts = data.dataDir.replace(/\\/g, '/').split('/');
+                    dirEl.textContent = '…/' + parts.slice(-2).join('/');
+                    dirEl.title = data.dataDir;
+                }
+            } catch (e) {
+                connected = false;
+                $('connectionBadge').className = 'connection-badge';
+                $('connectionText').textContent = 'Disconnected';
+            }
+        }
+
+        function updateUptime() {
+            if (serverStartTime) {
+                $('uptimeBadge').textContent = '⏱ ' + formatUptime(Date.now() - serverStartTime);
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // PROJECTS
+        // ═══════════════════════════════════════════════
+        async function fetchProjects() {
+            try {
+                const data = await api('/api/projects');
+                const grid = $('projectsGrid');
+
+                if (!data.success || !data.projects.length) {
+                    grid.innerHTML = '<div class="no-projects"><div class="no-projects-icon">📂</div>No projects found in Data/ directory</div>';
+                    return;
+                }
+
+                grid.innerHTML = data.projects.map(p => `
+                    <div class="project-card">
+                        <div class="project-slug">${escHtml(p.slugName)}</div>
+                        ${p.projectAspectRatio ? `<div class="project-ratio">${escHtml(p.projectAspectRatio)}</div>` : ''}
+                        <div class="project-stats">
+                            <div class="project-stat"><strong>${p.nameTitleCount}</strong> titles</div>
+                            <div class="project-stat"><strong>${p.keywordCount}</strong> keywords</div>
+                            <div class="project-stat"><strong>${p.imageCount}</strong> images</div>
+                        </div>
+                        <button class="btn btn-render" id="renderBtn_${escHtml(p.slugName)}" onclick="startRender('${escHtml(p.slugName)}')">
+                            ▶ Render
+                        </button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                $('projectsGrid').innerHTML = '<div class="no-projects"><div class="no-projects-icon">⚠️</div>Failed to load projects</div>';
+            }
+        }
+
+        function escHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        // ═══════════════════════════════════════════════
+        // RENDER
+        // ═══════════════════════════════════════════════
+        async function startRender(slugName) {
+            const btn = $('renderBtn_' + slugName);
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Starting...'; }
+
+            try {
+                const data = await apiPost('/api/render', { slugName });
+                if (data.success) {
+                    showToast(`Render started for "${slugName}"`, 'success');
+                    fetchRenderStatus();
+                } else {
+                    showToast(data.error || 'Failed to start render', 'error');
+                    if (btn) { btn.disabled = false; btn.innerHTML = '▶ Render'; }
+                }
+            } catch (e) {
+                showToast('Network error', 'error');
+                if (btn) { btn.disabled = false; btn.innerHTML = '▶ Render'; }
+            }
+        }
+
+        async function clearRender() {
+            try {
+                const data = await apiPost('/api/render/clear');
+                if (data.success) {
+                    showToast('Render state cleared', 'success');
+                    fetchRenderStatus();
+                    fetchProjects(); // re-enable buttons
+                } else {
+                    showToast(data.error || 'Failed to clear', 'error');
+                }
+            } catch (e) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        async function fetchRenderStatus() {
+            try {
+                const data = await api('/api/render/status');
+                renderRenderPanel(data);
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        function renderRenderPanel(data) {
+            const container = $('renderContent');
+            const badgeContainer = $('renderBadgeContainer');
+
+            if (!data || data.status === 'idle') {
+                badgeContainer.innerHTML = '';
+                container.innerHTML = `
+                    <div class="render-idle">
+                        <div class="render-idle-icon">💤</div>
+                        No render in progress
+                    </div>`;
+                stopElapsedTimer();
+                return;
+            }
+
+            // Status badge
+            const statusClass = {
+                'starting': 'badge-starting',
+                'rendering': 'badge-rendering',
+                'completed': 'badge-completed',
+                'failed': 'badge-failed',
+                'crashed': 'badge-crashed',
+            };
+
+            const badgeCls = statusClass[data.status] || 'badge-rendering';
+            const displayStatus = data.status || 'rendering';
+
+            // Determine badge from raw status text
+            let actualBadge = displayStatus;
+            if (!['starting', 'completed', 'failed', 'crashed', 'idle'].includes(displayStatus)) {
+                actualBadge = 'rendering';
+            }
+
+            const badgeClass = statusClass[actualBadge] || 'badge-rendering';
+
+            badgeContainer.innerHTML = `<div class="render-status-badge ${badgeClass}">${actualBadge === 'rendering' ? '<span class="spinner"></span>' : ''} ${escHtml(actualBadge)}</div>`;
+
+            // Build steps
+            const currentStep = data.currentStep || 0;
+            const stepsHtml = STEP_LABELS.map((label, i) => {
+                const stepNum = i + 1;
+                let cls = '';
+                if (stepNum < currentStep) cls = 'done';
+                else if (stepNum === currentStep) cls = 'active';
+                return `<div class="pipeline-step ${cls}">${stepNum === currentStep && !['completed', 'failed', 'crashed'].includes(actualBadge) ? '<span class="spinner" style="width:10px;height:10px;margin-right:2px;vertical-align:middle;"></span> ' : stepNum <= currentStep ? '✓ ' : ''}${label}</div>`;
+            }).join('');
+
+            // Progress
+            const progressPct = Math.round((currentStep / 7) * 100);
+            const stepLabel = currentStep > 0 && currentStep <= STEP_LABELS.length ? STEP_LABELS[currentStep - 1] : '—';
+
+            // Elapsed
+            if (data.startedAt && !renderStartTime) {
+                renderStartTime = new Date(data.startedAt).getTime();
+                startElapsedTimer();
+            }
+
+            const isFinished = ['completed', 'failed', 'crashed'].includes(actualBadge);
+            let elapsedStr = '';
+            if (data.completedAt && data.startedAt) {
+                const elapsed = new Date(data.completedAt) - new Date(data.startedAt);
+                elapsedStr = formatUptime(elapsed);
+            }
+
+            container.innerHTML = `
+                <div class="render-active">
+                    <div class="render-project-name">📦 ${escHtml(data.slugName)}</div>
+                    <div class="render-started">Started: ${formatDateTime(data.startedAt)}</div>
+
+                    <div class="progress-container">
+                        <div class="progress-header">
+                            <div class="progress-step-label">${escHtml(stepLabel)}</div>
+                            <div class="progress-percentage">${progressPct}%</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progressPct}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="pipeline-steps">${stepsHtml}</div>
+
+                    ${data.currentComp ? `<div class="render-elapsed">Composition: <strong>${escHtml(data.currentComp)}</strong></div>` : ''}
+
+                    <div class="render-elapsed" id="elapsedDisplay">
+                        ${isFinished && elapsedStr ? `Total time: <strong>${elapsedStr}</strong>` : 'Elapsed: <strong id="elapsedValue">00:00:00</strong>'}
+                    </div>
+
+                    ${isFinished ? `
+                        <div class="render-footer">
+                            ${data.result && data.result.outputs && data.result.outputs.length ? `<span style="font-size:12px;color:var(--text-muted);">Outputs: ${data.result.outputs.length} file(s)</span>` : `<span style="font-size:12px;color:var(--error);">${data.error || (data.result && data.result.errors ? data.result.errors.join(', ') : 'Unknown error')}</span>`}
+                            <button class="btn btn-clear" onclick="clearRender()">✕ Clear</button>
+                        </div>
+                    ` : ''}
+                </div>`;
+
+            if (isFinished) {
+                renderStartTime = null;
+                stopElapsedTimer();
+            }
+        }
+
+        function startElapsedTimer() {
+            stopElapsedTimer();
+            elapsedInterval = setInterval(() => {
+                if (renderStartTime) {
+                    const el = document.getElementById('elapsedValue');
+                    if (el) el.textContent = formatUptime(Date.now() - renderStartTime);
+                }
+            }, 1000);
+        }
+
+        function stopElapsedTimer() {
+            if (elapsedInterval) {
+                clearInterval(elapsedInterval);
+                elapsedInterval = null;
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // LOGS
+        // ═══════════════════════════════════════════════
+        async function fetchLogs() {
+            try {
+                const data = await api(`/api/logs?since=${lastLogId}`);
+                if (data.success && data.logs.length > 0) {
+                    displayedLogs.push(...data.logs);
+                    lastLogId = data.logs[data.logs.length - 1].id;
+
+                    // Cap displayed
+                    if (displayedLogs.length > 500) {
+                        displayedLogs = displayedLogs.slice(-300);
+                    }
+
+                    renderLogs(data.logs);
+                    $('logCount').textContent = `${displayedLogs.length} entries`;
+                }
+            } catch (e) {
+                // silent
+            }
+        }
+
+        function renderLogs(newEntries) {
+            const body = $('logBody');
+
+            // Remove "waiting" placeholder
+            const emptyEl = body.querySelector('.log-empty');
+            if (emptyEl) emptyEl.remove();
+
+            const fragment = document.createDocumentFragment();
+            for (const entry of newEntries) {
+                const line = document.createElement('div');
+                line.className = `log-line log-${entry.level}`;
+                line.innerHTML = `<span class="log-time">${formatTime(entry.timestamp)}</span><span class="log-msg">${escHtml(entry.message)}</span>`;
+                fragment.appendChild(line);
+            }
+            body.appendChild(fragment);
+
+            if (autoScroll) {
+                body.scrollTop = body.scrollHeight;
+            }
+        }
+
+        function clearLogs() {
+            displayedLogs = [];
+            $('logBody').innerHTML = '<div class="log-empty">Logs cleared</div>';
+            $('logCount').textContent = '0 entries';
+        }
+
+        function toggleAutoScroll() {
+            autoScroll = !autoScroll;
+            const btn = $('autoScrollBtn');
+            btn.className = autoScroll ? 'log-toggle active' : 'log-toggle';
+        }
+
+        // ═══════════════════════════════════════════════
+        // POLL LOOP
+        // ═══════════════════════════════════════════════
+        async function poll() {
+            await Promise.all([
+                fetchServerInfo(),
+                fetchRenderStatus(),
+                fetchLogs(),
+            ]);
+        }
+
+        // Init
+        (async () => {
+            // Auto-scroll button initial state
+            $('autoScrollBtn').className = 'log-toggle active';
+
+            await poll();
+            await fetchProjects();
+
+            // Poll every 2 seconds
+            setInterval(poll, 2000);
+
+            // Update uptime every second
+            setInterval(updateUptime, 1000);
+        })();
+    </script>
+</body>
+</html>
