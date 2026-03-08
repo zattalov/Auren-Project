@@ -6,8 +6,8 @@ Set oLink = oWS.CreateShortcut(sLinkFile)
 
 ' We now run npm start which triggers Electron
 oLink.TargetPath = "cmd.exe"
-oLink.Arguments = "/c ""cd /d \""c:\Users\AJMN\Desktop\AUREN backend\"" && npm start"""
-oLink.WorkingDirectory = "c:\Users\AJMN\Desktop\AUREN backend"
+oLink.Arguments = "/c ""cd /d \""c:\Users\AJMN\Desktop\AUREN backend\backend\"" && npm start"""
+oLink.WorkingDirectory = "c:\Users\AJMN\Desktop\AUREN backend\backend"
 ' Using shell32.dll index 215 for a power button icon
 oLink.IconLocation = "shell32.dll, 215"
 oLink.Description = "Launch AUREN Desktop Application"
