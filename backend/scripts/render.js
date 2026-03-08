@@ -17,7 +17,7 @@ const fs = require('fs-extra');
 const { generateExtendScript } = require('./generate-extendscript');
 
 // ── Configuration ──
-const AFTER_EFFECTS_DIR = 'C:\\Program Files\\Adobe\\Adobe After Effects 2025\\Support Files';
+const AFTER_EFFECTS_DIR = 'C:\\Program Files\\Adobe\\Adobe After Effects 2026\\Support Files';
 const AERENDER_PATH = path.join(AFTER_EFFECTS_DIR, 'aerender.exe');
 const AFTERFX_PATH = path.join(AFTER_EFFECTS_DIR, 'AfterFX.exe');
 const AFTERFX_COM_PATH = path.join(AFTER_EFFECTS_DIR, 'AfterFX.com');
@@ -69,7 +69,7 @@ function runExtendScript(jsxPath, outputDir) {
                 if (await fs.pathExists(doneFile)) {
                     clearInterval(checkInterval);
                     console.log('[AUREN] ExtendScript completed successfully');
-                    resolve({ success: true, output: 'Render complete' });
+                    resolve({ success: true, output: 'Render queue prepared' });
                 } else if (await fs.pathExists(errFile)) {
                     clearInterval(checkInterval);
                     const err = await fs.readFile(errFile, 'utf8');
@@ -80,6 +80,50 @@ function runExtendScript(jsxPath, outputDir) {
                 // Ignore transient file system errors during polling
             }
         }, 2000);
+    });
+}
+
+/**
+ * Execute aerender.exe to natively render the pre-configured render queue.
+ * 
+ * @param {string} aepPath - Absolute path to the .aep file
+ * @returns {Promise<{success: boolean, output: string}>}
+ */
+function runAERender(aepPath) {
+    return new Promise((resolve) => {
+        console.log('[AUREN] Starting native aerender.exe on: ' + aepPath);
+        
+        const proc = spawn(AERENDER_PATH, ['-project', aepPath], {
+            detached: false,
+        });
+
+        let outputLog = '';
+
+        proc.stdout.on('data', (data) => {
+            const lines = data.toString().split('\n');
+            lines.forEach(line => {
+                if (line.trim()) console.log(`[AERender] ${line.trim()}`);
+            });
+            outputLog += data.toString();
+        });
+
+        proc.stderr.on('data', (data) => {
+            console.error(`[AERender Warning] ${data.toString().trim()}`);
+            outputLog += data.toString();
+        });
+
+        proc.on('close', (code) => {
+            if (code === 0) {
+                resolve({ success: true, output: outputLog });
+            } else {
+                resolve({ success: false, output: `aerender exited with code ${code}` });
+            }
+        });
+        
+        proc.on('error', (err) => {
+            console.error('[AERender Error]', err);
+            resolve({ success: false, output: err.message });
+        });
     });
 }
 
@@ -141,6 +185,10 @@ async function renderProject(slugName, onStatus = () => { }) {
         onStatus('Generating ExtendScript...');
         const outputDir = path.join(EXPORT_DIR, slugName);
         await fs.ensureDir(outputDir);
+        
+        // Ensure Auto-Save folder exists to prevent silent After Effects crash
+        const autoSaveDir = path.join(projectDir, 'Adobe After Effects Auto-Save');
+        await fs.ensureDir(autoSaveDir);
 
         const jsxContent = generateExtendScript({
             aepPath: workingAep,
@@ -153,7 +201,7 @@ async function renderProject(slugName, onStatus = () => { }) {
         await fs.writeFile(jsxPath, jsxContent, 'utf-8');
         console.log('[AUREN] ExtendScript generated: ' + jsxPath);
 
-        // ── Step 5: Run the script (fills text + renders) ──
+        // ── Step 5: Run the script (fills text + prepares render queue) ──
         onStatus('Running After Effects (fill + render)...');
         const scriptResult = await runExtendScript(jsxPath, outputDir);
 
@@ -161,7 +209,15 @@ async function renderProject(slugName, onStatus = () => { }) {
             throw new Error('ExtendScript execution failed: ' + scriptResult.output);
         }
 
-        // ── Step 6: Collect output files ──
+        // ── Step 6: Execute Background Render ──
+        onStatus('Executing aerender.exe...');
+        const renderResult = await runAERender(workingAep);
+
+        if (!renderResult.success) {
+            throw new Error('aerender.exe execution failed: ' + renderResult.output);
+        }
+
+        // ── Step 7: Collect output files ──
         onStatus('Collecting outputs...');
         const outputFiles = await fs.readdir(outputDir);
         for (const file of outputFiles) {

@@ -79,7 +79,7 @@ function startServices() {
     console.log('[Electron] Starting Frontend Service...');
     // Start Vite frontend
     frontendProcess = spawn('npm', ['run', 'dev'], {
-        cwd: path.join(__dirname, 'AUREN-frontend'),
+        cwd: path.join(__dirname, '..', 'frontend'),
         shell: true,
         windowsHide: true,
     });

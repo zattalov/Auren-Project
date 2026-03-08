@@ -36,17 +36,8 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
     const keywords = data.keywords || [];
     const images = data.images || [];
 
-    // Determine which compositions to render
+    // We will dynamically push duplicate compositions during processing
     const compsToRender = [];
-    if (nameTitles.length > 0 && nameTitles.some(function (nt) { return nt.name || nt.title1 || nt.title2; })) {
-        compsToRender.push('lower-third');
-    }
-    if (keywords.length > 0 && keywords.some(function (k) { return k && k.trim(); })) {
-        compsToRender.push('keyword');
-    }
-    if (images.length > 0 && images.some(function (img) { return img.fileName || img.source; })) {
-        compsToRender.push('image');
-    }
 
     var lines = [];
 
@@ -57,6 +48,11 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
     lines.push('');
     lines.push('(function() {');
     lines.push('    app.beginSuppressDialogs();');
+    lines.push('    try {');
+    lines.push('        try {');
+    lines.push('            app.preferences.savePrefAsLong("Auto Save", "Enable Auto Save", 0);');
+    lines.push('            app.preferences.saveToDisk();');
+    lines.push('        } catch(e) { $.writeln("Warning: could not disable Auto-Save."); }');
     lines.push('');
 
     // Helpers
@@ -121,60 +117,90 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
     lines.push('    if (!outputDir.exists) outputDir.create();');
     lines.push('');
 
-    // Fill lower-third
+    // ── FILL LOWER-THIRD ──
     if (nameTitles.length > 0) {
-        var nt = nameTitles[0];
-        lines.push('    // ── FILL LOWER-THIRD ──');
-        lines.push('    var lowerThirdComp = findComp("lower-third");');
-        lines.push('    if (lowerThirdComp) {');
-        lines.push('        setTextLayerValue(lowerThirdComp, "name", "' + escapeForJsx(nt.name || '') + '");');
-        lines.push('        setTextLayerValue(lowerThirdComp, "title1", "' + escapeForJsx(nt.title1 || '') + '");');
-        lines.push('        setTextLayerValue(lowerThirdComp, "title2", "' + escapeForJsx(nt.title2 || '') + '");');
-        lines.push('        $.writeln("AUREN: lower-third text replaced");');
+        lines.push('    var baseLowerThird = findComp("lower-third");');
+        lines.push('    if (baseLowerThird) {');
+        for (let i = 0; i < nameTitles.length; i++) {
+            const nt = nameTitles[i];
+            if (!nt.name && !nt.title1 && !nt.title2) continue; // Skip empty fields
+
+            const dupName = `lower-third_${i + 1}`;
+            lines.push(`        var dupNT_${i} = baseLowerThird.duplicate();`);
+            lines.push(`        dupNT_${i}.name = "${dupName}";`);
+            lines.push(`        setTextLayerValue(dupNT_${i}, "name", "${escapeForJsx(nt.name || '')}");`);
+            lines.push(`        setTextLayerValue(dupNT_${i}, "title1", "${escapeForJsx(nt.title1 || '')}");`);
+            lines.push(`        setTextLayerValue(dupNT_${i}, "title2", "${escapeForJsx(nt.title2 || '')}");`);
+            lines.push(`        $.writeln("AUREN: lower-third duplicated for ${dupName}");`);
+            
+            compsToRender.push({ compName: dupName, outputName: `lower-third-${i + 1}` });
+        }
         lines.push('    } else {');
-        lines.push('        $.writeln("AUREN WARNING: lower-third composition not found");');
+        lines.push('        $.writeln("AUREN WARNING: base lower-third template not found");');
         lines.push('    }');
         lines.push('');
     }
 
-    // Fill keyword
+    // ── FILL KEYWORD ──
     if (keywords.length > 0) {
-        var keywordText = keywords.filter(function (k) { return k && k.trim(); }).join('\\n');
-        lines.push('    // ── FILL KEYWORD ──');
-        lines.push('    var keywordComp = findComp("keyword");');
-        lines.push('    if (keywordComp) {');
-        lines.push('        setTextLayerValue(keywordComp, "Keyword_text", "' + escapeForJsx(keywordText) + '");');
-        lines.push('        $.writeln("AUREN: keyword text replaced");');
+        lines.push('    var baseKeyword = findComp("keyword");');
+        lines.push('    if (baseKeyword) {');
+        for (let i = 0; i < keywords.length; i++) {
+            const kw = keywords[i];
+            if (!kw || !kw.trim()) continue;
+
+            const dupName = `keyword_${i + 1}`;
+            lines.push(`        var dupKW_${i} = baseKeyword.duplicate();`);
+            lines.push(`        dupKW_${i}.name = "${dupName}";`);
+            lines.push(`        setTextLayerValue(dupKW_${i}, "Keyword_text", "${escapeForJsx(kw)}");`);
+            lines.push(`        $.writeln("AUREN: keyword duplicated for ${dupName}");`);
+            
+            compsToRender.push({ compName: dupName, outputName: `keyword-${i + 1}` });
+        }
         lines.push('    } else {');
-        lines.push('        $.writeln("AUREN WARNING: keyword composition not found");');
+        lines.push('        $.writeln("AUREN WARNING: base keyword template not found");');
         lines.push('    }');
         lines.push('');
     }
 
-    // Fill image
-    if (images.length > 0 && images.some(function (img) { return img.fileName || img.source; })) {
-        var img = images[0];
-        lines.push('    // ── FILL IMAGE COMP ──');
-        lines.push('    var imageComp = findComp("image");');
-        lines.push('    if (imageComp) {');
+    // ── FILL IMAGE COMP ──
+    if (images.length > 0) {
+        lines.push('    var baseImageComp = findComp("image");');
+        lines.push('    if (baseImageComp) {');
+        for (let i = 0; i < images.length; i++) {
+            const img = images[i];
+            if (!img.fileName && !img.source) continue;
 
-        if (img.fileName) {
-            lines.push('        var existingFootage = findFootageItem("sample image.png");');
-            lines.push('        if (existingFootage) {');
-            lines.push('            var newImgFile = new File("' + projectDirAE + '/' + escapeForJsx(img.fileName) + '");');
-            lines.push('            if (newImgFile.exists) {');
-            lines.push('                existingFootage.replace(newImgFile);');
-            lines.push('                $.writeln("AUREN: Image replaced with " + newImgFile.fsName);');
-            lines.push('            }');
-            lines.push('        }');
-        }
-        if (img.source) {
-            lines.push('        setTextLayerValue(imageComp, "source", "' + escapeForJsx(img.source) + '");');
-        }
+            const dupName = `image_${i + 1}`;
+            lines.push(`        var dupIMG_${i} = baseImageComp.duplicate();`);
+            lines.push(`        dupIMG_${i}.name = "${dupName}";`);
+            
+            if (img.fileName) {
+                // Import file uniquely for this duplicated composition to avoid global crossover
+                lines.push(`        var imgFile_${i} = new File("${projectDirAE}/${escapeForJsx(img.fileName)}");`);
+                lines.push(`        if (imgFile_${i}.exists) {`);
+                lines.push(`            var newFootage_${i} = app.project.importFile(new ImportOptions(imgFile_${i}));`);
+                // Replace the layer internally
+                lines.push(`            var targetLayer_${i} = null;`);
+                lines.push(`            for(var j=1; j<=dupIMG_${i}.numLayers; j++) {`);
+                lines.push(`                var lay = dupIMG_${i}.layer(j);`);
+                lines.push(`                if(lay.source && lay.source.name === "sample image.png") { targetLayer_${i} = lay; break; }`);
+                lines.push(`            }`);
+                lines.push(`            if (targetLayer_${i}) {`);
+                lines.push(`                targetLayer_${i}.replaceSource(newFootage_${i}, false);`);
+                lines.push(`                $.writeln("AUREN: Image source replaced for ${dupName}");`);
+                lines.push(`            } else { $.writeln("AUREN WARNING: No matching sample layer for footage swap"); }`);
+                lines.push(`        } else { $.writeln("AUREN WARNING: Local image asset missing: " + imgFile_${i}.fsName); }`);
+            }
 
-        lines.push('        $.writeln("AUREN: image composition updated");');
+            if (img.source) {
+                lines.push(`        setTextLayerValue(dupIMG_${i}, "source", "${escapeForJsx(img.source || '')}");`);
+            }
+            
+            compsToRender.push({ compName: dupName, outputName: `image-${i + 1}` });
+        }
         lines.push('    } else {');
-        lines.push('        $.writeln("AUREN WARNING: image composition not found");');
+        lines.push('        $.writeln("AUREN WARNING: base image template not found");');
         lines.push('    }');
         lines.push('');
     }
@@ -193,32 +219,24 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
     lines.push('');
 
     for (var i = 0; i < compsToRender.length; i++) {
-        var compName = compsToRender[i];
-        var varName = compName.replace(/-/g, '_') + '_comp';
-        var outputFile = outputDirAE + '/' + compName + '.mov';
+        var compObj = compsToRender[i];
+        var varName = 'targetComp_' + i;
+        var outputFile = outputDirAE + '/' + compObj.outputName + '.mov';
 
-        lines.push('    var ' + varName + ' = findComp("' + compName + '");');
+        lines.push('    var ' + varName + ' = findComp("' + compObj.compName + '");');
         lines.push('    if (' + varName + ') {');
         lines.push('        var rqItem_' + i + ' = app.project.renderQueue.items.add(' + varName + ');');
         lines.push('        var om_' + i + ' = rqItem_' + i + '.outputModule(1);');
         lines.push('        om_' + i + '.applyTemplate("ProRes4444+A");');
         lines.push('        om_' + i + '.file = new File("' + outputFile + '");');
-        lines.push('        $.writeln("AUREN: Added to render queue: ' + compName + '");');
+        lines.push('        $.writeln("AUREN: Added to render queue: ' + compObj.compName + ' as ' + compObj.outputName + '");');
         lines.push('    }');
         lines.push('');
     }
 
-    // Render
-    lines.push('    // ── RENDER ──');
-    lines.push('    $.writeln("AUREN: Starting render queue (' + compsToRender.length + ' compositions)...");');
-    lines.push('    try {');
-    lines.push('        app.project.renderQueue.render();');
-    lines.push('        $.writeln("AUREN: Render queue completed!");');
-    lines.push('');
-    lines.push('        // Save, DO NOT quit');
-    lines.push('        // ── SAVE & LEAVE OPEN ──');
+    lines.push('    // ── FINALIZE & QUIT ──');
     lines.push('        app.project.save();');
-    lines.push('        $.writeln("AUREN: All done! Master project kept open.");');
+    lines.push('        $.writeln("AUREN: Save completed!");');
     lines.push('');
     lines.push('        // Write success file for Node.js to detect completion');
     lines.push('        var doneFile = new File("' + outputDirAE + '/auren_done.txt");');
@@ -233,6 +251,7 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
     lines.push('    }');
     lines.push('');
     lines.push('    app.endSuppressDialogs(false);');
+    lines.push('    app.quit();');
     lines.push('})();');
     lines.push('');
 

@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Type, Hash, Image as ImageIcon, Send, Monitor, ChevronRight, Plus, Trash2, CheckCircle, XCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from './lib/supabase';
 
 interface Toast {
   id: number;
@@ -152,95 +153,101 @@ export default function App() {
         }))
     };
 
-    const formData = new FormData();
-    formData.append('jsonData', JSON.stringify(exportData));
-
-    // Append any actual image files
-    data.images.forEach((img, index) => {
-      if (img.file) {
-        formData.append(`image_${index}`, img.file);
-      }
-    });
-
-    // ── Step 1: Save data ──
+    // ── Step 1: Upload Images to Supabase (if any) ──
     setIsRendering(true);
-    setRenderStatus('Saving project data...');
+    setRenderStatus('Uploading Images...');
+
+    const uploadedImageNames: string[] = [];
 
     try {
-      const saveResponse = await fetch('/api/save-data', {
-        method: 'POST',
-        body: formData,
-      });
+      for (let i = 0; i < data.images.length; i++) {
+        const img = data.images[i];
+        if (img.file) {
+          // Keep the original filename formatting
+          const fileName = `${img.file.name}`;
+          const cloudPath = `${data.slugName}/${fileName}`;
+          
+          const { error: uploadError } = await supabase
+            .storage
+            .from('project-files')
+            .upload(cloudPath, img.file, {
+              cacheControl: '3600',
+              upsert: true
+            });
 
-      const saveResult = await saveResponse.json();
-
-      if (!saveResult.success) {
-        showToast(`Failed to save: ${saveResult.error}`, 'error');
-        setIsRendering(false);
-        setRenderStatus('');
-        return;
-      }
-
-      showToast('Project data saved. Starting render...', 'success');
-
-      // ── Step 2: Trigger render ──
-      setRenderStatus('Starting After Effects render...');
-
-      // Clear any previous render state
-      await fetch('/api/render/clear', { method: 'POST' });
-
-      const renderResponse = await fetch('/api/render', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugName: data.slugName }),
-      });
-
-      const renderResult = await renderResponse.json();
-
-      if (!renderResult.success) {
-        showToast(`Render failed: ${renderResult.error}`, 'error');
-        setIsRendering(false);
-        setRenderStatus('');
-        return;
-      }
-
-      // ── Step 3: Poll for render status ──
-      const pollStatus = async () => {
-        try {
-          const statusResponse = await fetch('/api/render/status');
-          const statusResult = await statusResponse.json();
-
-          if (statusResult.status === 'completed') {
-            setIsRendering(false);
-            setRenderStatus('');
-            showToast(`Render complete! ${(statusResult.result?.outputs || []).length} video(s) exported.`, 'success');
-            return;
+          if (uploadError) {
+             console.error('Image Upload Error:', uploadError);
+             throw new Error(`Failed to upload ${fileName}: ${uploadError.message}`);
           }
-
-          if (statusResult.status === 'failed' || statusResult.status === 'crashed') {
-            setIsRendering(false);
-            setRenderStatus('');
-            const errorMsg = statusResult.result?.errors?.join(', ') || statusResult.error || 'Unknown error';
-            showToast(`Render failed: ${errorMsg}`, 'error');
-            return;
-          }
-
-          // Still rendering — update status and poll again
-          setRenderStatus(statusResult.status || 'Rendering...');
-          setTimeout(pollStatus, 2000);
-        } catch {
-          setIsRendering(false);
-          setRenderStatus('');
-          showToast('Lost connection to render server', 'error');
         }
+      }
+
+      // ── Step 2: Create Render Job in Database ──
+      setRenderStatus('Submitting Job...');
+
+      const { data: jobData, error: dbError } = await supabase
+        .from('render_jobs')
+        .insert([{
+            slug_name: data.slugName,
+            status: 'pending',
+            export_data: exportData
+        }])
+        .select()
+        .single();
+        
+      if (dbError) {
+          console.error('Database Insert Error:', dbError);
+          throw new Error(`Failed to submit job: ${dbError.message}`);
+      }
+
+      showToast('Project data submitted! Render started.', 'success');
+
+      // ── Step 3: Poll for Status in Database ──
+      setRenderStatus('Waiting in Queue...');
+      let isJobFinished = false;
+
+      const pollStatus = async () => {
+         if (isJobFinished) return;
+         try {
+            const { data: currentJob, error: checkError } = await supabase
+                .from('render_jobs')
+                .select('status, error_message')
+                .eq('id', jobData.id)
+                .single();
+                
+            if (checkError) throw checkError;
+
+            if (currentJob.status === 'completed') {
+                isJobFinished = true;
+                setIsRendering(false);
+                setRenderStatus('');
+                showToast('Render complete!', 'success');
+                return;
+            }
+
+            if (currentJob.status === 'failed' || currentJob.status === 'crashed') {
+                isJobFinished = true;
+                setIsRendering(false);
+                setRenderStatus('');
+                showToast(`Render failed: ${currentJob.error_message || 'Unknown error'}`, 'error');
+                return;
+            }
+            
+            // Still in queue or rendering
+            setRenderStatus(currentJob.status === 'pending' ? 'Waiting in Queue...' : 'Rendering in After Effects...');
+            setTimeout(pollStatus, 3000);
+         } catch (error) {
+             console.error('Polling Error:', error);
+             // Still retry pooling on a simple network error
+             setTimeout(pollStatus, 3000);
+         }
       };
 
-      // Start polling after a short delay
-      setTimeout(pollStatus, 2000);
+      setTimeout(pollStatus, 3000);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
-      showToast('Network error while processing', 'error');
+      showToast(error.message || 'Error occurred while processing', 'error');
       setIsRendering(false);
       setRenderStatus('');
     }

@@ -10,11 +10,11 @@ const SUPABASE_URL = 'https://fdregdbxjcjpqikpxwym.supabase.co';
 // WARNING: This is the anon public key. You need to paste your anon public key here.
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkcmVnZGJ4amNqcHFpa3B4d3ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTk4NzksImV4cCI6MjA4ODUzNTg3OX0.TKZA8Q58gD6ZeBbTY1x7kA0PPWWeo0Ra6GKZaf18Yfc';
 
-let supabase = null;
+let supabaseClient = null;
 
 function initSupabase() {
     if (window.supabase) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("Supabase client initialized.");
     } else {
         console.error('Supabase library not loaded! Check index.html CDN link.');
@@ -323,7 +323,7 @@ async function handleRender() {
             })),
     };
 
-    if (!supabase) {
+    if (!supabaseClient) {
         showToast('Supabase client not initialized.', 'error');
         return;
     }
@@ -336,7 +336,7 @@ async function handleRender() {
             const img = state.images[i];
             if (img.file) {
                 const filePath = `${state.slugName}/${img.file.name}`;
-                const { error: uploadError } = await supabase
+                const { error: uploadError } = await supabaseClient
                     .storage
                     .from('project-files')
                     .upload(filePath, img.file, { upsert: true });
@@ -348,7 +348,7 @@ async function handleRender() {
         setRendering(true, 'Saving project data to Cloud...');
 
         // 2. Insert Job into Supabase Database
-        const { data, error: dbError } = await supabase
+        const { data, error: dbError } = await supabaseClient
             .from('render_jobs')
             .insert([{
                 slug_name: state.slugName,
@@ -373,10 +373,10 @@ async function handleRender() {
 }
 
 async function pollRenderStatus(jobId) {
-    if (!jobId || !supabase) return;
+    if (!jobId || !supabaseClient) return;
 
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('render_jobs')
             .select('status, error_message')
             .eq('id', jobId)
@@ -432,7 +432,7 @@ async function checkBackendConnection() {
     const dot = document.getElementById('status-dot');
     const text = document.getElementById('status-text');
 
-    if (!supabase) {
+    if (!supabaseClient) {
         dot.className = 'status-dot disconnected';
         text.textContent = 'Setup Required';
         console.warn("checkBackendConnection: supabase client is null");
@@ -442,7 +442,7 @@ async function checkBackendConnection() {
     try {
         console.log("Checking Supabase connection...");
         // Use a lightweight query to check if we can reach Supabase
-        const { data, error } = await supabase.from('render_jobs').select('id').limit(1);
+        const { data, error } = await supabaseClient.from('render_jobs').select('id').limit(1);
 
         if (error) {
             throw error;
@@ -462,17 +462,24 @@ async function checkBackendConnection() {
 // ══════════════════════════════════════════════
 
 function tryGetSequenceName() {
-    if (!csInterface) return;
+    if (!csInterface || typeof csInterface.evalScript !== 'function') {
+        console.warn('CSInterface.evalScript not available, skipping auto-fill slug.');
+        return;
+    }
 
-    csInterface.evalScript('getActiveSequenceName()', (result) => {
-        if (result && result !== 'EvalScript error.' && result.trim()) {
-            const slugInput = document.getElementById('slug-name');
-            if (!slugInput.value.trim()) {
-                slugInput.value = result.trim();
-                state.slugName = result.trim();
+    try {
+        csInterface.evalScript('getActiveSequenceName()', (result) => {
+            if (result && result !== 'EvalScript error.' && result.trim()) {
+                const slugInput = document.getElementById('slug-name');
+                if (slugInput && !slugInput.value.trim()) {
+                    slugInput.value = result.trim();
+                    state.slugName = result.trim();
+                }
             }
-        }
-    });
+        });
+    } catch (e) {
+        console.error('Failed to get sequence name:', e);
+    }
 }
 
 // ══════════════════════════════════════════════
@@ -489,51 +496,57 @@ function escapeHtml(str) {
 // ══════════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Supabase
-    initSupabase();
+    try {
+        // Initialize Supabase
+        initSupabase();
 
-    // Initial render
-    renderNameTitles();
-    renderKeywords();
-    renderImages();
-
-    // Tab navigation
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-
-    // Add entry buttons
-    document.getElementById('add-name-title').addEventListener('click', () => {
-        state.nameTitles.push({ name: '', title1: '', title2: '' });
+        // Initial render
         renderNameTitles();
-    });
-
-    document.getElementById('add-keyword').addEventListener('click', () => {
-        state.keywords.push('');
         renderKeywords();
-    });
-
-    document.getElementById('add-image').addEventListener('click', () => {
-        state.images.push({ file: null, source: '', aspectRatio: '' });
         renderImages();
-    });
 
-    // Bottom bar inputs → sync to state
-    document.getElementById('slug-name').addEventListener('input', (e) => {
-        state.slugName = e.target.value;
-    });
+        // Tab navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
 
-    document.getElementById('project-aspect-ratio').addEventListener('change', (e) => {
-        state.projectAspectRatio = e.target.value;
-    });
+        // Add entry buttons
+        document.getElementById('add-name-title').addEventListener('click', () => {
+            state.nameTitles.push({ name: '', title1: '', title2: '' });
+            renderNameTitles();
+        });
 
-    // Render button
-    document.getElementById('btn-render').addEventListener('click', handleRender);
+        document.getElementById('add-keyword').addEventListener('click', () => {
+            state.keywords.push('');
+            renderKeywords();
+        });
 
-    // Check backend connection
-    checkBackendConnection();
-    setInterval(checkBackendConnection, 15000);
+        document.getElementById('add-image').addEventListener('click', () => {
+            state.images.push({ file: null, source: '', aspectRatio: '' });
+            renderImages();
+        });
 
-    // Try to auto-fill slug from Premiere Pro sequence
-    tryGetSequenceName();
+        // Bottom bar inputs → sync to state
+        document.getElementById('slug-name').addEventListener('input', (e) => {
+            state.slugName = e.target.value;
+        });
+
+        document.getElementById('project-aspect-ratio').addEventListener('change', (e) => {
+            state.projectAspectRatio = e.target.value;
+        });
+
+        // Render button
+        document.getElementById('btn-render').addEventListener('click', handleRender);
+
+        // Check backend connection
+        checkBackendConnection();
+        setInterval(checkBackendConnection, 15000);
+        
+        // Try to auto-fill slug from Premiere Pro sequence
+        tryGetSequenceName();
+
+    } catch (e) {
+        console.error('Fatal Initialization Error:', e);
+        showToast('Extension failed to load correctly. See console.', 'error');
+    }
 });
