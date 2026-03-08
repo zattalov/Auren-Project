@@ -2,14 +2,20 @@
   "name": "auren-backend",
   "version": "1.0.0",
   "description": "AUREN After Effects render backend",
-  "main": "server.js",
+  "main": "main.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "electron .",
     "dev": "node --watch server.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
     "cors": "^2.8.6",
     "express": "^4.21.2",
-    "fs-extra": "^11.2.0"
+    "fs-extra": "^11.2.0",
+    "multer": "^2.1.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^40.8.0"
   }
 }

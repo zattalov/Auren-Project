@@ -90,8 +90,14 @@ export default defineConfig(({ mode }) => {
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       proxy: {
-        '/api/render': 'http://localhost:4000',
-        '/api/projects': 'http://localhost:4000',
+        '/api': {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+          // Let the Vite saveDataPlugin handle /api/save-data locally
+          bypass(req) {
+            if (req.url?.startsWith('/api/save-data')) return req.url;
+          },
+        },
       },
     },
   };

@@ -13,7 +13,18 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs-extra');
-const { renderProject, isAfterEffectsRunning, DATA_DIR, EXPORT_DIR, AERENDER_PATH } = require('./scripts/render');
+const multer = require('multer');
+const { createClient } = require('@supabase/supabase-js');
+const { renderProject, isAfterEffectsRunning, DATA_DIR, EXPORT_DIR, AERENDER_PATH, BASE_DIR } = require('./scripts/render');
+
+const SUPABASE_URL = 'https://fdregdbxjcjpqikpxwym.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkcmVnZGJ4amNqcHFpa3B4d3ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTk4NzksImV4cCI6MjA4ODUzNTg3OX0.TKZA8Q58gD6ZeBbTY1x7kA0PPWWeo0Ra6GKZaf18Yfc';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const HISTORY_DIR = path.join(BASE_DIR, 'History');
+fs.ensureDirSync(HISTORY_DIR);
+
+// Configure multer for image uploads (store in memory temporarily)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -93,151 +104,161 @@ app.get('/api/logs', (req, res) => {
     res.json({ success: true, logs: entries });
 });
 
-/**
- * GET /api/projects
- * Lists all available projects in the Data/ directory.
- */
-app.get('/api/projects', async (req, res) => {
-    try {
-        const entries = await fs.readdir(DATA_DIR, { withFileTypes: true });
-        const projects = [];
+// ==========================================
+//  SUPABASE WORKER LOGIC
+// ==========================================
 
-        for (const entry of entries) {
-            if (entry.isDirectory()) {
-                const jsonPath = path.join(DATA_DIR, entry.name, `${entry.name}.json`);
-                if (await fs.pathExists(jsonPath)) {
-                    const data = await fs.readJson(jsonPath);
-                    projects.push({
-                        slugName: entry.name,
-                        projectAspectRatio: data.projectAspectRatio || '',
-                        nameTitleCount: (data.nameTitles || []).length,
-                        keywordCount: (data.keywords || []).length,
-                        imageCount: (data.images || []).length,
-                    });
+async function startSupabaseWorker() {
+    console.log('[AUREN] Supabase worker started, polling for jobs at https://fdregdbxjcjpqikpxwym.supabase.co...');
+
+    setInterval(async () => {
+        if (activeRender) return; // Wait until current render is done
+
+        try {
+            // Check for pending jobs
+            const { data: job, error } = await supabase
+                .from('render_jobs')
+                .select('*')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: true })
+                .limit(1)
+                .single();
+
+            // Suppress "No rows" errors since those are normal for polling
+            if (error && error.code === 'PGRST116') return;
+            if (error || !job) return;
+
+            console.log(`\n${'═'.repeat(60)}`);
+            console.log(`[AUREN] 🎬 Found new job from Cloud: ${job.slug_name}`);
+            console.log(`${'═'.repeat(60)}\n`);
+
+            // Mark job as rendering immediately to prevent other workers from taking it
+            await supabase.from('render_jobs').update({ status: 'rendering' }).eq('id', job.id);
+
+            const exportData = job.export_data;
+            const slugName = job.slug_name;
+
+            // Prepare local folder
+            const projectDir = path.join(DATA_DIR, slugName);
+            await fs.ensureDir(projectDir);
+
+            // Download images from storage
+            if (exportData.images && exportData.images.length > 0) {
+                for (const img of exportData.images) {
+                    if (img.fileName) {
+                        const cloudPath = `${slugName}/${img.fileName}`;
+                        const localPath = path.join(projectDir, img.fileName);
+
+                        console.log(`[AUREN] Downloading image: ${img.fileName}...`);
+                        const { data: fileData, error: downloadError } = await supabase
+                            .storage
+                            .from('project-files')
+                            .download(cloudPath);
+
+                        if (downloadError) {
+                            console.error(`[AUREN] Failed to download image ${img.fileName}:`, downloadError);
+                        } else if (fileData) {
+                            const buffer = Buffer.from(await fileData.arrayBuffer());
+                            await fs.writeFile(localPath, buffer);
+                            console.log(`[AUREN] Downloaded image successfully.`);
+                        }
+                    }
                 }
             }
-        }
 
-        res.json({ success: true, projects });
-    } catch (err) {
-        console.error('[AUREN] Error listing projects:', err);
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
+            // Save JSON
+            const jsonPath = path.join(projectDir, `${slugName}.json`);
+            await fs.writeJson(jsonPath, exportData, { spaces: 2 });
+            console.log(`[AUREN] Saved project data locally.`);
 
-/**
- * POST /api/render
- * Starts an After Effects render for the specified project.
- * 
- * Body: { slugName: string }
- */
-app.post('/api/render', async (req, res) => {
-    const { slugName } = req.body;
-
-    if (!slugName) {
-        return res.status(400).json({ success: false, error: 'Missing slugName' });
-    }
-
-    // Check if a render is already in progress
-    if (activeRender) {
-        return res.status(409).json({
-            success: false,
-            error: `A render is already in progress for "${activeRender.slugName}". Please wait for it to complete.`,
-        });
-    }
-
-    // Check if AE is already running (it would lock the project)
-    const aeRunning = await isAfterEffectsRunning();
-    if (aeRunning) {
-        return res.status(409).json({
-            success: false,
-            error: 'After Effects is currently running. Please close it before starting a render.',
-        });
-    }
-
-    // Validate the project exists
-    const jsonPath = path.join(DATA_DIR, slugName, `${slugName}.json`);
-    if (!await fs.pathExists(jsonPath)) {
-        return res.status(404).json({
-            success: false,
-            error: `Project "${slugName}" not found. Save the project data first.`,
-        });
-    }
-
-    // Start the render (don't await — respond immediately)
-    activeRender = {
-        slugName,
-        status: 'starting',
-        startedAt: new Date().toISOString(),
-        currentStep: 0,
-        totalSteps: 7,
-        currentComp: null,
-    };
-
-    console.log(`\n${'═'.repeat(60)}`);
-    console.log(`[AUREN] 🎬 Starting render for project: ${slugName}`);
-    console.log(`${'═'.repeat(60)}\n`);
-
-    // Respond immediately so the frontend isn't blocked
-    res.json({
-        success: true,
-        message: `Render started for "${slugName}"`,
-        status: 'rendering',
-    });
-
-    // Map status strings to step numbers for progress tracking
-    const stepMap = {
-        'Validating project...': 1,
-        'Reading project data...': 2,
-        'Preparing After Effects project...': 3,
-        'Generating ExtendScript...': 4,
-        'Filling After Effects data...': 5,
-    };
-
-    // Run the render pipeline in the background
-    try {
-        const result = await renderProject(slugName, (status) => {
-            activeRender.status = status;
-            // Track step number
-            if (stepMap[status]) {
-                activeRender.currentStep = stepMap[status];
+            // Start Render
+            const aeInstalled = await isAfterEffectsRunning();
+            if (!aeInstalled) {
+                throw new Error('After Effects installation not found.');
             }
-            // Track which comp is rendering
-            const compMatch = status.match(/^Rendering (\S+)/);
-            if (compMatch) {
-                activeRender.currentStep = 6;
-                activeRender.currentComp = compMatch[1].replace(':', '');
+
+            activeRender = {
+                slugName,
+                status: 'starting',
+                startedAt: new Date().toISOString(),
+                currentStep: 0,
+                totalSteps: 6,
+                currentComp: null,
+            };
+
+            const stepMap = {
+                'Validating project...': 1,
+                'Reading project data...': 2,
+                'Preparing AE project...': 3,
+                'Generating ExtendScript...': 4,
+                'Running After Effects (fill + render)...': 5,
+                'Collecting outputs...': 6,
+            };
+
+            const result = await renderProject(slugName, (status) => {
+                activeRender.status = status;
+                if (stepMap[status]) activeRender.currentStep = stepMap[status];
+                console.log(`[AUREN] Status: ${status}`);
+            });
+
+            if (result.success) {
+                console.log(`\n${'═'.repeat(60)}`);
+                console.log(`[AUREN] ✅ Render complete for: ${slugName}`);
+                console.log(`[AUREN]    Outputs: ${result.outputs.join(', ')}`);
+                console.log(`${'═'.repeat(60)}\n`);
+
+                // Move to history
+                try {
+                    const historyDir = path.join(HISTORY_DIR, slugName);
+                    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+                    for (let attempt = 1; attempt <= 3; attempt++) {
+                        try {
+                            await fs.move(projectDir, historyDir, { overwrite: true });
+                            console.log(`[AUREN] Moved project ${slugName} to History.`);
+                            break;
+                        } catch (err) {
+                            if (attempt < 3 && err.code !== 'ENOENT') {
+                                await delay(2000);
+                            } else {
+                                throw err;
+                            }
+                        }
+                    }
+                } catch (e) { console.error('[AUREN] History move error:', e); }
+
+                // Update Supabase
+                await supabase.from('render_jobs').update({ status: 'completed' }).eq('id', job.id);
+            } else {
+                console.error(`\n${'═'.repeat(60)}`);
+                console.error(`[AUREN] ❌ Render failed for: ${slugName}`);
+                console.error(`[AUREN]    Errors: ${result.errors.join(', ')}`);
+                console.error(`${'═'.repeat(60)}\n`);
+
+                await supabase.from('render_jobs').update({
+                    status: 'failed',
+                    error_message: result.errors.join(', ')
+                }).eq('id', job.id);
             }
-            console.log(`[AUREN] Status: ${status}`);
-        });
 
-        if (result.success) {
-            console.log(`\n${'═'.repeat(60)}`);
-            console.log(`[AUREN] ✅ Render complete for: ${slugName}`);
-            console.log(`[AUREN]    Outputs: ${result.outputs.join(', ')}`);
-            console.log(`${'═'.repeat(60)}\n`);
-        } else {
-            console.error(`\n${'═'.repeat(60)}`);
-            console.error(`[AUREN] ❌ Render failed for: ${slugName}`);
-            console.error(`[AUREN]    Errors: ${result.errors.join(', ')}`);
-            console.error(`${'═'.repeat(60)}\n`);
+            activeRender.result = result;
+            activeRender.status = result.success ? 'completed' : 'failed';
+            activeRender.currentStep = 6;
+            activeRender.completedAt = new Date().toISOString();
+
+            // Auto-clear activeRender after 10 seconds so we can take the next job
+            setTimeout(() => { activeRender = null; }, 10000);
+
+        } catch (err) {
+            console.error('[AUREN] Worker error:', err.message);
         }
+    }, 5000); // Check every 5 seconds
+}
 
-        activeRender.result = result;
-        activeRender.status = result.success ? 'completed' : 'failed';
-        activeRender.currentStep = 7;
-        activeRender.completedAt = new Date().toISOString();
-
-    } catch (err) {
-        console.error(`[AUREN] Pipeline crash: ${err.message}`);
-        activeRender.status = 'crashed';
-        activeRender.error = err.message;
-    }
-});
+startSupabaseWorker();
 
 /**
  * GET /api/render/status
- * Returns the current render status.
+ * Returns the current render status for the local dashboard.
  */
 app.get('/api/render/status', (req, res) => {
     if (!activeRender) {
@@ -248,23 +269,6 @@ app.get('/api/render/status', (req, res) => {
         success: true,
         ...activeRender,
     });
-});
-
-/**
- * POST /api/render/clear
- * Clears the last render result so a new render can start.
- */
-app.post('/api/render/clear', (req, res) => {
-    if (activeRender && (activeRender.status === 'completed' || activeRender.status === 'failed' || activeRender.status === 'crashed')) {
-        activeRender = null;
-        return res.json({ success: true, message: 'Render state cleared' });
-    }
-
-    if (activeRender) {
-        return res.status(409).json({ success: false, error: 'Cannot clear — render still in progress' });
-    }
-
-    res.json({ success: true, message: 'Nothing to clear' });
 });
 
 /**
