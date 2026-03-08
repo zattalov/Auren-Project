@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUREN Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                        <line x1="8" y1="21" x2="16" y2="21" />
+                        <line x1="12" y1="17" x2="12" y2="21" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="logo-text">AUREN</h1>
+                    <span class="logo-sub">Premiere Pro</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-tab="name-title" id="nav-name-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="4 7 4 4 20 4 20 7" />
+                        <line x1="9" y1="20" x2="15" y2="20" />
+                        <line x1="12" y1="4" x2="12" y2="20" />
+                    </svg>
+                    <span>Name & Title</span>
+                    <svg class="nav-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </button>
+                <button class="nav-btn" data-tab="keyword" id="nav-keyword">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="9" x2="20" y2="9" />
+                        <line x1="4" y1="15" x2="20" y2="15" />
+                        <line x1="10" y1="3" x2="8" y2="21" />
+                        <line x1="16" y1="3" x2="14" y2="21" />
+                    </svg>
+                    <span>Keyword</span>
+                    <svg class="nav-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </button>
+                <button class="nav-btn" data-tab="image" id="nav-image">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <span>Image</span>
+                    <svg class="nav-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-box">
+                    <p class="status-label">CONNECTION</p>
+                    <div class="status-row">
+                        <span class="status-dot" id="status-dot"></span>
+                        <span class="status-text" id="status-text">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="breadcrumb">
+                    <span class="bc-muted">Projects</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                    <span class="bc-current" id="header-title">Name & Title</span>
+                </div>
+            </header>
+
+            <!-- Scrollable Content -->
+            <div class="content-scroll">
+                <!-- ═══ Name & Title Tab ═══ -->
+                <div class="tab-content active" id="tab-name-title">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Name and Title</h2>
+                            <button class="btn-add" id="add-name-title" title="Add Entry">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="entries-grid" id="name-title-entries">
+                            <!-- Entries injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ Keyword Tab ═══ -->
+                <div class="tab-content" id="tab-keyword">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Keyword</h2>
+                            <button class="btn-add" id="add-keyword" title="Add Keyword">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="entries-grid" id="keyword-entries">
+                            <!-- Entries injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ Image Tab ═══ -->
+                <div class="tab-content" id="tab-image">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Image</h2>
+                            <button class="btn-add" id="add-image" title="Add Image">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="entries-grid" id="image-entries">
+                            <!-- Entries injected by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="bottom-bar">
+                <div class="bottom-bar-inner">
+                    <div class="bottom-field flex-1">
+                        <label class="field-label">Slug Name</label>
+                        <input type="text" id="slug-name" placeholder="e.g. news-header-v1"
+                            class="input-field input-mono">
+                    </div>
+                    <div class="bottom-field w-200">
+                        <label class="field-label">Project Aspect Ratio</label>
+                        <select id="project-aspect-ratio" class="input-field">
+                            <option value="" disabled selected>Select Ratio</option>
+                            <option value="Vertical">Vertical (9:16)</option>
+                            <option value="Horizontal">Horizontal (16:9)</option>
+                            <option value="Square">Square (1:1)</option>
+                        </select>
+                    </div>
+                    <button class="btn-render" id="btn-render">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13" />
+                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                        <span>Render</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="lib/CSInterface.js"></script>
+    <script src="lib/supabase.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
