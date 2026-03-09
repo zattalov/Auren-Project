@@ -131,10 +131,11 @@ function runAERender(aepPath) {
  * Main render pipeline.
  * 
  * @param {string} slugName - The project slug (subfolder name in Data/)
+ * @param {Object} settings - The After Effects mapping settings
  * @param {Function} onStatus - Callback for progress updates
  * @returns {Promise<Object>} Results with success flag, outputs, and errors
  */
-async function renderProject(slugName, onStatus = () => { }) {
+async function renderProject(slugName, settings, onStatus = () => { }) {
     const results = { success: false, outputs: [], errors: [] };
 
     try {
@@ -195,6 +196,7 @@ async function renderProject(slugName, onStatus = () => { }) {
             projectDir: projectDir,
             outputDir: outputDir,
             data: data,
+            settings: settings,
         });
 
         const jsxPath = path.join(projectDir, 'fill_and_render.jsx');

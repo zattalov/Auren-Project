@@ -17,39 +17,39 @@
            DESIGN TOKENS — matching AUREN Frontend
            ═══════════════════════════════════════════════ */
         :root {
-            --bg-page: #F5F5F5;
-            --bg-content: #F9F9F9;
-            --bg-card: #FFFFFF;
-            --bg-input: #EBEBEB;
-            --bg-sidebar: #FFFFFF;
-            --bg-hover: #F0F0F0;
-            --bg-active: #1A1A1A;
+            --bg-page: #1A1A24;
+            --bg-content: #1E1E2E;
+            --bg-card: #222330;
+            --bg-input: #16161F;
+            --bg-sidebar: #222330;
+            --bg-hover: #2A2B3D;
+            --bg-active: #32364E;
 
-            --border: #E5E5E5;
-            --border-input: #BDBDBD;
+            --border: #32364E;
+            --border-input: #454964;
 
-            --text-primary: #1A1A1A;
-            --text-secondary: #616161;
-            --text-muted: #9E9E9E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8F95B2;
+            --text-muted: #646882;
 
             --accent: #fac800;
             --accent-hover: #e5b600;
 
             --success: #22c55e;
-            --success-bg: #f0fdf4;
-            --success-border: #bbf7d0;
+            --success-bg: rgba(34, 197, 94, 0.1);
+            --success-border: rgba(34, 197, 94, 0.2);
             --error: #ef4444;
-            --error-bg: #fef2f2;
-            --error-border: #fecaca;
+            --error-bg: rgba(239, 68, 68, 0.1);
+            --error-border: rgba(239, 68, 68, 0.2);
             --warning: #f59e0b;
 
             --radius: 5px;
             --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
 
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.04);
-            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.03);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.4);
         }
 
         /* ═══════════════════════════════════════════════
@@ -66,7 +66,7 @@
         body {
             font-family: var(--font-sans);
             background: var(--bg-page);
-            color: var(--text-primary);
+            color: #FFFFFF;
             min-height: 100vh;
             display: flex;
         }
@@ -143,7 +143,7 @@
 
         .sidebar-link:hover {
             background: var(--bg-hover);
-            color: var(--text-primary);
+            color: #FFFFFF;
         }
 
         .sidebar-link.active {
@@ -171,7 +171,7 @@
         }
 
         .sidebar-link:hover .link-icon {
-            color: var(--text-primary);
+            color: #FFFFFF;
         }
 
         .sidebar-link.active .link-icon {
@@ -247,7 +247,7 @@
             font-size: 11px;
             font-weight: 700;
             font-family: var(--font-mono);
-            color: var(--text-primary);
+            color: #FFFFFF;
             text-align: right;
             max-width: 120px;
             white-space: nowrap;
@@ -299,7 +299,7 @@
 
         .top-bar-breadcrumb .crumb-active {
             font-weight: 700;
-            color: var(--text-primary);
+            color: #FFFFFF;
         }
 
         .top-bar-breadcrumb .crumb-sep {
@@ -477,7 +477,7 @@
 
         .btn-render {
             background: var(--accent);
-            color: var(--text-primary);
+            color: #FFFFFF;
             width: 100%;
             justify-content: center;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -626,7 +626,7 @@
             font-size: 13px;
             font-family: var(--font-mono);
             font-weight: 700;
-            color: var(--text-primary);
+            color: #FFFFFF;
         }
 
         .progress-bar {
@@ -670,7 +670,7 @@
         .pipeline-step.active {
             background: var(--accent);
             border-color: var(--accent-hover);
-            color: var(--text-primary);
+            color: #FFFFFF;
         }
 
         .pipeline-step.done {
@@ -687,7 +687,7 @@
         }
 
         .render-elapsed strong {
-            color: var(--text-primary);
+            color: #FFFFFF;
         }
 
         .render-footer {
@@ -721,7 +721,7 @@
         .log-title {
             font-size: 14px;
             font-weight: 700;
-            color: var(--text-primary);
+            color: #FFFFFF;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -831,7 +831,7 @@
             width: 14px;
             height: 14px;
             border: 2px solid rgba(0, 0, 0, 0.1);
-            border-top-color: var(--text-primary);
+            border-top-color: #FFFFFF;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -888,6 +888,62 @@
         }
 
         /* ═══════════════════════════════════════════════
+           MODAL
+           ═══════════════════════════════════════════════ */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-dialog {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            width: 400px;
+            max-width: 90vw;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(20px);
+            transition: transform 0.2s;
+            text-align: center;
+        }
+        .modal-overlay.show .modal-dialog {
+            transform: translateY(0);
+        }
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #FFFFFF;
+        }
+        .modal-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .modal-actions .btn {
+            min-width: 100px;
+        }
+
+        /* ═══════════════════════════════════════════════
            RESPONSIVE
            ═══════════════════════════════════════════════ */
         @media (max-width: 1024px) {
@@ -937,53 +993,29 @@
         </div>
 
         <nav class="sidebar-nav">
-            <button class="sidebar-link active">
-                <span class="link-icon">📊</span>
-                Dashboard
-            </button>
-            <a class="sidebar-link" href="http://localhost:3000" target="_blank">
-                <span class="link-icon">✏️</span>
-                Editor
-            </a>
-            <button class="sidebar-link"
-                onclick="document.getElementById('projectsSection').scrollIntoView({behavior:'smooth'})">
-                <span class="link-icon">📁</span>
+            <button class="sidebar-link active" onclick="switchView('projects')">
+                <span class="link-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></span>
                 Projects
             </button>
-            <button class="sidebar-link"
-                onclick="document.getElementById('logSection').scrollIntoView({behavior:'smooth'})">
-                <span class="link-icon">📋</span>
-                Logs
+            <button class="sidebar-link" onclick="switchView('history')">
+                <span class="link-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+                History
             </button>
+            <button class="sidebar-link" onclick="switchView('settings')">
+                <span class="link-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>
+                Settings
+            </button>
+            <button class="sidebar-link" onclick="switchView('console')">
+                <span class="link-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg></span>
+                System Console
+            </button>
+            <a class="sidebar-link" href="http://localhost:3000" target="_blank" style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; border-radius: 0;">
+                <span class="link-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg></span>
+                Frontend Editor
+            </a>
         </nav>
 
-        <div class="sidebar-footer">
-            <div class="sidebar-status">
-                <div class="sidebar-status-label">Server Status</div>
-                <div class="sidebar-status-row">
-                    <div class="status-dot" id="sidebarDot"></div>
-                    <span class="sidebar-status-text" id="sidebarStatusText">Connecting...</span>
-                </div>
-                <div class="sidebar-status-details">
-                    <div class="sidebar-stat-row">
-                        <span class="sidebar-stat-label">Port</span>
-                        <span class="sidebar-stat-value" id="statusPort">—</span>
-                    </div>
-                    <div class="sidebar-stat-row">
-                        <span class="sidebar-stat-label">Started</span>
-                        <span class="sidebar-stat-value" id="statusStarted">—</span>
-                    </div>
-                    <div class="sidebar-stat-row">
-                        <span class="sidebar-stat-label">AE</span>
-                        <span class="sidebar-stat-value" id="statusAE">—</span>
-                    </div>
-                    <div class="sidebar-stat-row">
-                        <span class="sidebar-stat-label">Data</span>
-                        <span class="sidebar-stat-value" id="statusDataDir" style="cursor:help;">—</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+
     </aside>
 
     <!-- ══════ MAIN ══════ -->
@@ -993,7 +1025,7 @@
             <div class="top-bar-breadcrumb">
                 <span class="crumb">AUREN</span>
                 <span class="crumb-sep">›</span>
-                <span class="crumb-active">Dashboard</span>
+                <span class="crumb-active" id="topbarTitle">Projects</span>
             </div>
             <div class="top-bar-right">
                 <div class="uptime-badge" id="uptimeBadge">⏱ --:--:--</div>
@@ -1002,50 +1034,96 @@
 
         <!-- Content -->
         <div class="content">
-            <!-- Render Status -->
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Render Status</h2>
-                    <div id="renderBadgeContainer"></div>
+
+            <!-- ══════ VIEW: PROJECTS ══════ -->
+            <div id="view-projects" class="view-section active">
+                <!-- Render Status -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Render Status</h2>
+                        <div id="renderBadgeContainer"></div>
+                    </div>
+                    <div id="renderContent">
+                        <div class="render-idle">
+                            <div class="render-idle-icon text-muted" style="margin-bottom: 12px; opacity: 0.5;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="M2 4h20v16H2z"></path><path d="M6 8h12"></path><path d="M6 12h12"></path><path d="M6 16h6"></path></svg>
+                            </div>
+                            No render in progress
+                        </div>
+                    </div>
                 </div>
-                <div id="renderContent">
-                    <div class="render-idle">
-                        <div class="render-idle-icon">💤</div>
-                        No render in progress
+
+
+            </div>
+
+            <!-- ══════ VIEW: HISTORY ══════ -->
+            <div id="view-history" class="view-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Render History</h2>
+                        <button class="btn-outline" onclick="fetchHistory()">↻ Refresh</button>
+                    </div>
+                    <div id="historyContainer">
+                        <div class="no-projects">
+                            <div class="no-projects-icon">📜</div>
+                            Loading history...
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Projects -->
-            <div class="card" id="projectsSection">
-                <div class="card-header">
-                    <h2 class="card-title">Projects</h2>
-                    <button class="btn-outline" onclick="fetchProjects()">↻ Refresh</button>
-                </div>
-                <div id="projectsContainer">
-                    <div class="no-projects">
-                        <div class="no-projects-icon">📂</div>
-                        Loading projects...
+            <!-- ══════ VIEW: SETTINGS ══════ -->
+            <div id="view-settings" class="view-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">After Effects Path Configuration</h2>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 32px;">
+                        Configure the exact After Effects Composition and Layer names that the system will target when replacing the frontend data.
+                    </p>
+                    
+                    <div id="settingsForm" style="display: flex; flex-direction: column; gap: 24px;">
+                        Loading settings...
+                    </div>
+
+                    <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
+                        <button class="btn btn-dark" onclick="saveSettings()">Save Configuration</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Log Console -->
-            <div class="log-console" id="logSection">
-                <div class="log-header">
-                    <div class="log-title">
-                        <span>▸</span>
-                        Live Console
+            <!-- ══════ VIEW: CONSOLE ══════ -->
+            <div id="view-console" class="view-section" style="display: none;">
+                <!-- Log Console -->
+                <div class="log-console" id="logSection">
+                    <div class="log-header">
+                        <div class="log-title">
+                            <span>▸</span>
+                            System Console Logs
+                        </div>
+                        <div class="log-controls">
+                            <span class="log-count" id="logCount">0 entries</span>
+                            <button class="log-toggle active" id="autoScrollBtn" onclick="toggleAutoScroll()">Auto-scroll</button>
+                            <button class="log-toggle" onclick="clearLogs()">Clear</button>
+                        </div>
                     </div>
-                    <div class="log-controls">
-                        <span class="log-count" id="logCount">0 entries</span>
-                        <button class="log-toggle" id="autoScrollBtn" onclick="toggleAutoScroll()">Auto-scroll</button>
-                        <button class="log-toggle" onclick="clearLogs()">Clear</button>
+                    <div class="log-body" id="logBody">
+                        <div class="log-empty">Waiting for logs...</div>
                     </div>
                 </div>
-                <div class="log-body" id="logBody">
-                    <div class="log-empty">Waiting for logs...</div>
-                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-dialog">
+            <div class="modal-title" id="modalTitle">Confirm Action</div>
+            <div class="modal-message" id="modalMessage">Are you sure?</div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-dark" id="modalConfirmBtn">Yes, Confirm</button>
             </div>
         </div>
     </div>
@@ -1079,6 +1157,40 @@
             setTimeout(() => el.className = 'toast', 4000);
         }
 
+        // ═══════════════════════════════════════════════
+        // VIEWS
+        // ═══════════════════════════════════════════════
+        function switchView(viewId) {
+            // Update sidebar active state
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            // Hide all views
+            document.querySelectorAll('.view-section').forEach(view => {
+                view.style.display = 'none';
+            });
+            // Show selected view
+            $('view-' + viewId).style.display = 'block';
+
+            // Update Header Title
+            const titles = {
+                'projects': 'Projects',
+                'history': 'History',
+                'settings': 'Settings',
+                'console': 'System Console'
+            };
+            $('topbarTitle').textContent = titles[viewId] || 'Dashboard';
+
+            if (viewId === 'settings') loadSettings();
+            if (viewId === 'history') fetchHistory();
+            if (viewId === 'projects') fetchProjects();
+        }
+
+        // ═══════════════════════════════════════════════
+        // UTILITIES
+        // ═══════════════════════════════════════════════
         function formatUptime(ms) {
             const s = Math.floor(ms / 1000);
             const h = Math.floor(s / 3600);
@@ -1115,25 +1227,10 @@
                 const data = await api('/api/server/info');
                 if (data.success) {
                     connected = true;
-                    serverStartTime = new Date(data.startedAt).getTime();
-
-                    $('sidebarDot').className = 'status-dot connected';
-                    $('sidebarStatusText').textContent = 'Connected · Port ' + data.port;
-                    $('statusPort').textContent = data.port;
-                    $('statusStarted').textContent = formatDateTime(data.startedAt);
-
-                    const aeEl = $('statusAE');
-                    aeEl.textContent = data.aeInstalled ? 'Installed ✓' : 'Not Found';
-                    aeEl.className = 'sidebar-stat-value ' + (data.aeInstalled ? 'val-success' : 'val-error');
-
-                    const parts = data.dataDir.replace(/\\/g, '/').split('/');
-                    $('statusDataDir').textContent = '…/' + parts.slice(-2).join('/');
-                    $('statusDataDir').title = data.dataDir;
+                    if (!serverStartTime) serverStartTime = new Date(data.startedAt).getTime();
                 }
             } catch (e) {
                 connected = false;
-                $('sidebarDot').className = 'status-dot';
-                $('sidebarStatusText').textContent = 'Disconnected';
             }
         }
 
@@ -1151,7 +1248,7 @@
                 const data = await api('/api/projects');
                 const container = $('projectsContainer');
                 if (!data.success || !data.projects.length) {
-                    container.innerHTML = '<div class="no-projects"><div class="no-projects-icon">📂</div>No projects found in Data/ directory</div>';
+                    container.innerHTML = '<div class="no-projects"><div class="no-projects-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; opacity:0.5;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>No projects found in Data/ directory</div>';
                     return;
                 }
 
@@ -1203,8 +1300,227 @@
                 container.innerHTML = html;
             } catch (e) {
                 if ($('projectsContainer')) {
-                    $('projectsContainer').innerHTML = '<div class="no-projects"><div class="no-projects-icon">⚠️</div>Failed to load projects</div>';
+                    $('projectsContainer').innerHTML = '<div class="no-projects"><div class="no-projects-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>Failed to load projects</div>';
                 }
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // HISTORY
+        // ═══════════════════════════════════════════════
+        async function fetchHistory() {
+            try {
+                // History uses the same API endpoint and filtering done
+                const data = await api('/api/projects');
+                const container = $('historyContainer');
+                if (!data.success) {
+                    container.innerHTML = '<div class="no-projects"><div class="no-projects-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>Failed to load history</div>';
+                    return;
+                }
+                const done = data.projects.filter(p => p.status === 'done');
+                if (!done.length) {
+                    container.innerHTML = '<div class="no-projects"><div class="no-projects-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; opacity:0.5;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>No completed projects</div>';
+                    return;
+                }
+
+                let html = `
+                    <div class="projects-list">
+                        ${done.map(p => `
+                            <div class="project-card">
+                                <div class="project-info" style="flex: 1; min-width: 0; align-items: flex-start;">
+                                    <div class="project-main-details" style="width: 100%; min-width: 0;">
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <div class="badge badge-completed" style="flex-shrink: 0;">DONE</div>
+                                            <div class="project-slug" style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escHtml(p.slugName)}</div>
+                                        </div>
+                                        <div class="project-stat" style="margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <strong>${p.nameTitleCount}</strong> titles · <strong>${p.keywordCount}</strong> keys · <strong>${p.imageCount}</strong> imgs
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="project-actions" style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                                    <button class="btn btn-outline" style="padding: 6px 12px; font-size: 11px;" onclick="openRenderFolder('${escHtml(p.slugName)}')">Open Render Folder</button>
+                                    <button class="btn btn-outline" style="padding: 6px 12px; font-size: 11px; color: var(--accent); border-color: var(--accent);" onclick="rerenderHistory('${escHtml(p.slugName)}')">Re-render</button>
+                                    <button class="btn btn-outline" style="padding: 6px 12px; font-size: 11px; color: var(--error); border-color: var(--error);" onclick="deleteHistory('${escHtml(p.slugName)}')">Delete</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.innerHTML = html;
+            } catch (e) {
+                if ($('historyContainer')) {
+                    $('historyContainer').innerHTML = '<div class="no-projects"><div class="no-projects-icon">⚠️</div>Failed to load history</div>';
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // MODAL LOGIC
+        // ═══════════════════════════════════════════════
+        let modalConfirmCallback = null;
+
+        function showConfirmModal(title, message, callback, isDestructive = false) {
+            $('modalTitle').textContent = title;
+            $('modalMessage').textContent = message;
+            const confirmBtn = $('modalConfirmBtn');
+            
+            if (isDestructive) {
+                confirmBtn.style.background = 'var(--error)';
+                confirmBtn.style.color = '#fff';
+                confirmBtn.style.border = '1px solid var(--error)';
+                confirmBtn.textContent = 'Yes, Delete';
+            } else {
+                confirmBtn.style.background = 'var(--bg-active)';
+                confirmBtn.style.color = '#fff';
+                confirmBtn.style.border = '1px solid var(--bg-active)';
+                confirmBtn.textContent = 'Yes, Confirm';
+            }
+
+            modalConfirmCallback = callback;
+            $('confirmModal').classList.add('show');
+        }
+
+        function closeConfirmModal() {
+            $('confirmModal').classList.remove('show');
+            modalConfirmCallback = null;
+        }
+
+        $('modalConfirmBtn').addEventListener('click', () => {
+            if (modalConfirmCallback) modalConfirmCallback();
+            closeConfirmModal();
+        });
+
+        // ═══════════════════════════════════════════════
+        // ACTIONS
+        // ═══════════════════════════════════════════════
+        function rerenderHistory(slug) {
+            showConfirmModal('Re-render Project', `Are you sure you want to queue "${slug}" for re-rendering? This will move it out of History.`, async () => {
+                try {
+                    const data = await apiPost(`/api/history/${slug}/rerender`);
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        fetchHistory();
+                        switchView('projects');
+                    } else {
+                        showToast(data.error || 'Failed to re-render', 'error');
+                    }
+                } catch(e) { showToast('Network error', 'error'); }
+            });
+        }
+
+        function deleteHistory(slug) {
+            showConfirmModal('Delete Project', `Are you sure you want to permanently delete "${slug}"? This action cannot be undone.`, async () => {
+                try {
+                    const res = await fetch(API_BASE + `/api/history/${slug}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        fetchHistory();
+                    } else {
+                        showToast(data.error || 'Failed to delete', 'error');
+                    }
+                } catch(e) { showToast('Network error', 'error'); }
+            }, true);
+        }
+
+        async function openRenderFolder(slug) {
+            try {
+                const data = await apiPost(`/api/history/${slug}/open`);
+                if (!data.success) showToast(data.error || 'Failed to open folder', 'error');
+            } catch(e) { showToast('Network error', 'error'); }
+        }
+
+        // ═══════════════════════════════════════════════
+        // SETTINGS
+        // ═══════════════════════════════════════════════
+        let currentSettings = null;
+
+        async function loadSettings() {
+            try {
+                const data = await api('/api/settings');
+                if (data.success && data.settings) {
+                    currentSettings = data.settings;
+                    renderSettingsForm();
+                }
+            } catch (e) {
+                console.error(e);
+                $('settingsForm').innerHTML = '<div class="no-projects"><div class="no-projects-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>Failed to load settings</div>';
+            }
+        }
+
+        function renderSettingsForm() {
+            if (!currentSettings) return;
+            const container = $('settingsForm');
+            
+            const fieldLabels = {
+                nameTitle: 'Name & Title (Text fields)',
+                keyword: 'Keyword (Text fields)',
+                image: 'Image & Media (Media files)'
+            };
+
+            let html = '';
+            for (const [key, config] of Object.entries(currentSettings)) {
+                html += `
+                    <div style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px;">
+                        <div style="font-weight: 700; font-size: 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <span style="display:inline-block; width:8px; height:8px; background:var(--accent); border-radius:50%;"></span>
+                            ${fieldLabels[key] || key}
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                `;
+
+                for (const [propName, propVal] of Object.entries(config)) {
+                    let label = propName;
+                    if (propName === 'compName') label = 'Composition Name';
+                    else if (propName.startsWith('layerName_')) label = 'Layer Name (' + propName.replace('layerName_', '') + ')';
+                    else if (propName === 'footageName') label = 'Footage Match Name';
+                    else label = propName.replace(/([A-Z])/g, ' $1').trim();
+
+                    html += `
+                            <div>
+                                <label style="display:block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">${escHtml(label)}</label>
+                                <input type="text" id="setting_${key}_${propName}" value="${escHtml(propVal)}" style="width: 100%; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-input); border-radius: var(--radius); font-size: 13px; font-family: var(--font-mono); outline: none; color: #FFFFFF;">
+                            </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        async function saveSettings() {
+            if (!currentSettings) return;
+            const newSettings = { ...currentSettings };
+            
+            for (const key of Object.keys(newSettings)) {
+                const config = newSettings[key];
+                const updatedConfig = {};
+                for (const propName of Object.keys(config)) {
+                    const input = $('setting_' + key + '_' + propName);
+                    if (input) {
+                        updatedConfig[propName] = input.value.trim();
+                    } else {
+                        updatedConfig[propName] = config[propName];
+                    }
+                }
+                newSettings[key] = updatedConfig;
+            }
+
+            try {
+                const data = await apiPost('/api/settings', { settings: newSettings });
+                if (data.success) {
+                    showToast('Settings saved successfully', 'success');
+                    currentSettings = newSettings;
+                } else {
+                    showToast(data.error || 'Failed to save settings', 'error');
+                }
+            } catch (e) {
+                showToast('Network error saving settings', 'error');
             }
         }
 

@@ -23,6 +23,25 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const HISTORY_DIR = path.join(BASE_DIR, 'History');
 fs.ensureDirSync(HISTORY_DIR);
 
+const SETTINGS_FILE = path.join(BASE_DIR, 'settings.json');
+const DEFAULT_SETTINGS = {
+    nameTitle: { 
+        compName: 'lower-third', 
+        layerName_name: 'name', 
+        layerName_title1: 'title1', 
+        layerName_title2: 'title2' 
+    },
+    keyword: { 
+        compName: 'keyword', 
+        layerName_keyword: 'Keyword_text' 
+    },
+    image: { 
+        compName: 'image', 
+        layerName_source: 'source', 
+        footageName: 'sample image.png' 
+    }
+};
+
 // Configure multer for image uploads (store in memory temporarily)
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -104,6 +123,187 @@ app.get('/api/logs', (req, res) => {
     res.json({ success: true, logs: entries });
 });
 
+/**
+ * GET /api/projects
+ * Scans Data and History directories to return all projects for the dashboard.
+ */
+app.get('/api/projects', async (req, res) => {
+    try {
+        const projects = [];
+
+        // Scan DATA_DIR (active projects)
+        if (await fs.pathExists(DATA_DIR)) {
+            const dirs = await fs.readdir(DATA_DIR);
+            for (const dir of dirs) {
+                const projectPath = path.join(DATA_DIR, dir);
+                const stat = await fs.stat(projectPath);
+                if (stat.isDirectory()) {
+                    const jsonPath = path.join(projectPath, `${dir}.json`);
+                    let data = {};
+                    if (await fs.pathExists(jsonPath)) {
+                        data = await fs.readJson(jsonPath);
+                    }
+                    
+                    let status = 'pending';
+                    if (activeRender && activeRender.slugName === dir && activeRender.status !== 'failed') {
+                        status = 'in progress';
+                    } else if (activeRender && activeRender.slugName === dir && activeRender.status === 'failed') {
+                        status = 'failed';
+                    }
+
+                    projects.push({
+                        slugName: dir,
+                        status: status,
+                        nameTitleCount: (data.nameTitles || []).length,
+                        keywordCount: (data.keywords || []).length,
+                        imageCount: (data.images || []).length,
+                        projectAspectRatio: data.projectAspectRatio || ''
+                    });
+                }
+            }
+        }
+
+        // Scan HISTORY_DIR (completed projects)
+        if (await fs.pathExists(HISTORY_DIR)) {
+            const dirs = await fs.readdir(HISTORY_DIR);
+            for (const dir of dirs) {
+                const projectPath = path.join(HISTORY_DIR, dir);
+                const stat = await fs.stat(projectPath);
+                if (stat.isDirectory()) {
+                    const jsonPath = path.join(projectPath, `${dir}.json`);
+                    let data = {};
+                    if (await fs.pathExists(jsonPath)) {
+                        data = await fs.readJson(jsonPath);
+                    }
+                    projects.push({
+                        slugName: dir,
+                        status: 'done',
+                        nameTitleCount: (data.nameTitles || []).length,
+                        keywordCount: (data.keywords || []).length,
+                        imageCount: (data.images || []).length,
+                        projectAspectRatio: data.projectAspectRatio || ''
+                    });
+                }
+            }
+        }
+
+        res.json({ success: true, projects });
+    } catch (error) {
+        console.error('[AUREN] Failed to fetch projects:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch projects' });
+    }
+});
+
+/**
+ * GET /api/settings
+ * Returns the currently saved Settings map
+ */
+app.get('/api/settings', async (req, res) => {
+    try {
+        if (await fs.pathExists(SETTINGS_FILE)) {
+            const settings = await fs.readJson(SETTINGS_FILE);
+            res.json({ success: true, settings });
+        } else {
+            res.json({ success: true, settings: DEFAULT_SETTINGS });
+        }
+    } catch (error) {
+        console.error('[AUREN] Failed to read settings:', error);
+        res.status(500).json({ success: false, error: 'Failed to read settings.' });
+    }
+});
+
+/**
+ * POST /api/settings
+ * Saves the Settings map
+ */
+app.post('/api/settings', async (req, res) => {
+    try {
+        const settings = req.body.settings;
+        if (!settings) {
+            return res.status(400).json({ success: false, error: 'Invalid settings object.' });
+        }
+        await fs.writeJson(SETTINGS_FILE, settings, { spaces: 2 });
+        res.json({ success: true, message: 'Settings saved successfully.' });
+    } catch (error) {
+        console.error('[AUREN] Failed to save settings:', error);
+        res.status(500).json({ success: false, error: 'Failed to save settings.' });
+    }
+});
+
+/**
+ * POST /api/history/:slug/rerender
+ * Moves a project back to Data and resets its Supabase status to pending.
+ */
+app.post('/api/history/:slug/rerender', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        const historyPath = path.join(HISTORY_DIR, slug);
+        const dataPath = path.join(DATA_DIR, slug);
+
+        if (await fs.pathExists(historyPath)) {
+            await fs.move(historyPath, dataPath, { overwrite: true });
+        } else if (!await fs.pathExists(dataPath)) {
+            return res.status(404).json({ success: false, error: 'Project not found locally.' });
+        }
+
+        // Reset in Supabase so worker picks it up
+        await supabase.from('render_jobs')
+            .update({ status: 'pending', error_message: null })
+            .eq('slug_name', slug);
+
+        res.json({ success: true, message: 'Project queued for re-render.' });
+    } catch (error) {
+        console.error('[AUREN] Re-render error:', error);
+        res.status(500).json({ success: false, error: 'Failed to queue re-render.' });
+    }
+});
+
+/**
+ * DELETE /api/history/:slug
+ * Deletes a project from the local History and exported-videos folder.
+ */
+app.delete('/api/history/:slug', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        const historyPath = path.join(HISTORY_DIR, slug);
+        const exportPath = path.join(EXPORT_DIR, slug);
+
+        await fs.remove(historyPath);
+        await fs.remove(exportPath);
+
+        // Optional: Remove from Supabase or leave as is?
+        // We'll just do local deletion.
+
+        res.json({ success: true, message: 'Project deleted from history.' });
+    } catch (error) {
+        console.error('[AUREN] Delete history error:', error);
+        res.status(500).json({ success: false, error: 'Failed to delete project.' });
+    }
+});
+
+/**
+ * POST /api/history/:slug/open
+ * Opens the rendered video export folder in Windows Explorer.
+ */
+app.post('/api/history/:slug/open', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        const exportPath = path.join(EXPORT_DIR, slug);
+
+        if (!await fs.pathExists(exportPath)) {
+            return res.status(404).json({ success: false, error: 'Export folder not found.' });
+        }
+
+        const { exec } = require('child_process');
+        exec(`start "" "${exportPath}"`);
+
+        res.json({ success: true, message: 'Folder opened.' });
+    } catch (error) {
+        console.error('[AUREN] Open folder error:', error);
+        res.status(500).json({ success: false, error: 'Failed to open folder.' });
+    }
+});
+
 // ==========================================
 //  SUPABASE WORKER LOGIC
 // ==========================================
@@ -171,6 +371,12 @@ async function startSupabaseWorker() {
             await fs.writeJson(jsonPath, exportData, { spaces: 2 });
             console.log(`[AUREN] Saved project data locally.`);
 
+            // Read Settings
+            let settings = DEFAULT_SETTINGS;
+            try {
+                if (await fs.pathExists(SETTINGS_FILE)) settings = await fs.readJson(SETTINGS_FILE);
+            } catch (e) { console.error('Settings read error', e); }
+
             // Start Render
             const aeInstalled = await isAfterEffectsRunning();
             if (!aeInstalled) {
@@ -195,7 +401,7 @@ async function startSupabaseWorker() {
                 'Collecting outputs...': 6,
             };
 
-            const result = await renderProject(slugName, (status) => {
+            const result = await renderProject(slugName, settings, (status) => {
                 activeRender.status = status;
                 if (stepMap[status]) activeRender.currentStep = stepMap[status];
                 console.log(`[AUREN] Status: ${status}`);
@@ -255,6 +461,124 @@ async function startSupabaseWorker() {
 }
 
 startSupabaseWorker();
+
+/**
+ * POST /api/render
+ * Starts the render pipeline for a specific project directory.
+ */
+app.post('/api/render', async (req, res) => {
+    if (activeRender) {
+        return res.status(400).json({ success: false, error: 'A render is already in progress.' });
+    }
+
+    const { slugName } = req.body;
+    if (!slugName) return res.status(400).json({ success: false, error: 'Missing slugName.' });
+
+    const projectDir = path.join(DATA_DIR, slugName);
+    if (!await fs.pathExists(projectDir)) {
+        return res.status(404).json({ success: false, error: 'Project not found locally.' });
+    }
+
+    // Read Settings
+    let settings = DEFAULT_SETTINGS;
+    try {
+        if (await fs.pathExists(SETTINGS_FILE)) settings = await fs.readJson(SETTINGS_FILE);
+    } catch (e) {
+        console.error('Settings read error', e);
+    }
+
+    console.log(`\n${'═'.repeat(60)}`);
+    console.log(`[AUREN] 🎬 Starting LOCAL render for: ${slugName}`);
+    console.log(`${'═'.repeat(60)}\n`);
+
+    activeRender = {
+        slugName,
+        status: 'starting',
+        startedAt: new Date().toISOString(),
+        currentStep: 0,
+        totalSteps: 6,
+        currentComp: null,
+    };
+
+    const stepMap = {
+        'Validating project...': 1,
+        'Reading project data...': 2,
+        'Preparing AE project...': 3,
+        'Generating ExtendScript...': 4,
+        'Running After Effects (fill + render)...': 5,
+        'Collecting outputs...': 6,
+    };
+
+    // Respond immediately, render in background
+    res.json({ success: true, message: 'Render started.' });
+
+    try {
+        const aeInstalled = await isAfterEffectsRunning();
+        if (!aeInstalled) throw new Error('After Effects installation not found.');
+
+        const result = await renderProject(slugName, settings, (status) => {
+            if (!activeRender) return;
+            activeRender.status = status;
+            if (stepMap[status]) activeRender.currentStep = stepMap[status];
+            console.log(`[AUREN] Status: ${status}`);
+        });
+
+        if (!activeRender) return; // if it was cleared
+
+        if (result.success) {
+            console.log(`\n${'═'.repeat(60)}`);
+            console.log(`[AUREN] ✅ LOCAL Render complete for: ${slugName}`);
+            console.log(`[AUREN]    Outputs: ${result.outputs.join(', ')}`);
+            console.log(`${'═'.repeat(60)}\n`);
+
+            // Move to history
+            try {
+                const historyDir = path.join(HISTORY_DIR, slugName);
+                const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        await fs.move(projectDir, historyDir, { overwrite: true });
+                        console.log(`[AUREN] Moved project ${slugName} to History.`);
+                        break;
+                    } catch (err) {
+                        if (attempt < 3 && err.code !== 'ENOENT') {
+                            await delay(2000);
+                        } else {
+                            throw err;
+                        }
+                    }
+                }
+            } catch (e) { console.error('[AUREN] History move error:', e); }
+
+            // Update Supabase if it exists
+            await supabase.from('render_jobs').update({ status: 'completed' }).eq('slug_name', slugName);
+        } else {
+            console.error(`\n${'═'.repeat(60)}`);
+            console.error(`[AUREN] ❌ LOCAL Render failed for: ${slugName}`);
+            console.error(`[AUREN]    Errors: ${result.errors.join(', ')}`);
+            console.error(`${'═'.repeat(60)}\n`);
+
+            await supabase.from('render_jobs').update({
+                status: 'failed',
+                error_message: result.errors.join(', ')
+            }).eq('slug_name', slugName);
+        }
+
+        activeRender.result = result;
+        activeRender.status = result.success ? 'completed' : 'failed';
+        activeRender.currentStep = 6;
+        activeRender.completedAt = new Date().toISOString();
+
+    } catch (err) {
+        console.error('[AUREN] Local render pipeline error:', err);
+        if (activeRender) {
+            activeRender.status = 'failed';
+            activeRender.result = { success: false, errors: [err.message] };
+            activeRender.completedAt = new Date().toISOString();
+        }
+    }
+}
+);
 
 /**
  * GET /api/render/status

@@ -260,7 +260,7 @@ export default function App() {
   ];
 
   return (
-    <div className="flex h-screen bg-[#F5F5F5] font-sans text-[#1A1A1A]">
+    <div className="flex h-screen bg-[#1A1A24] font-sans text-white">
       {/* Toast Notifications */}
       <div className="fixed top-6 right-6 z-50 flex flex-col gap-3">
         <AnimatePresence>
@@ -293,9 +293,9 @@ export default function App() {
         </AnimatePresence>
       </div>
       {/* Sidebar */}
-      <aside className="w-72 bg-white border-r border-[#E5E5E5] flex flex-col shadow-sm">
-        <div className="p-8 border-bottom border-[#E5E5E5] flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#1A1A1A] rounded-[5px] flex items-center justify-center">
+      <aside className="w-72 bg-[#222330] border-r border-[#32364E] flex flex-col shadow-sm">
+        <div className="p-8 border-bottom border-[#32364E] flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#32364E] rounded-[5px] flex items-center justify-center">
             <Monitor className="text-white w-6 h-6" />
           </div>
           <div>
@@ -309,48 +309,41 @@ export default function App() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as ProjectTab)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-[5px] transition-all duration-200 group ${activeTab === tab.id
-                ? 'bg-[#1A1A1A] text-white shadow-md'
-                : 'hover:bg-[#F0F0F0] text-[#616161]'
+                ? 'bg-[#32364E] text-white shadow-md'
+                : 'hover:bg-[#2A2B3D] text-[#8F95B2]'
                 }`}
             >
-              <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-white' : 'text-[#9E9E9E] group-hover:text-[#1A1A1A]'}`} />
+              <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-[#FAC800]' : 'text-[#646882] group-hover:text-white'}`} />
               <span className="font-medium text-sm">{tab.label}</span>
               {activeTab === tab.id && <ChevronRight className="ml-auto w-4 h-4 opacity-50" />}
             </button>
           ))}
         </nav>
 
-        <div className="p-6 border-t border-[#E5E5E5]">
-          <div className="bg-[#F9F9F9] p-4 rounded-[5px] border border-[#E5E5E5]">
-            <p className="text-[11px] text-[#9E9E9E] uppercase font-bold mb-2">System Status</p>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500" />
-              <span className="text-xs font-medium">Queue: 3</span>
-            </div>
-          </div>
+        <div className="p-6 border-t border-[#32364E]">
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-10">
+        <header className="h-20 bg-[#222330] border-b border-[#32364E] flex items-center justify-between px-10">
           <div className="flex items-center gap-2">
-            <span className="text-[#9E9E9E] text-sm font-medium">Projects</span>
-            <ChevronRight className="w-4 h-4 text-[#9E9E9E]" />
-            <span className="text-sm font-bold capitalize">{activeTab.replace('-', ' ')}</span>
+            <span className="text-[#646882] text-sm font-medium">Projects</span>
+            <ChevronRight className="w-4 h-4 text-[#646882]" />
+            <span className="text-sm font-bold capitalize text-white">{activeTab.replace('-', ' ')}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right mr-4">
-              <p className="text-sm font-bold">Jamel Eddine Ghabbara</p>
-              <p className="text-[10px] text-[#9E9E9E] uppercase font-bold tracking-wider">Sr. Motion Graphic Deisgner</p>
+              <p className="text-sm font-bold text-white">Jamel Eddine Ghabbara</p>
+              <p className="text-[10px] text-[#8F95B2] uppercase font-bold tracking-wider">Sr. Motion Graphic Deisgner</p>
             </div>
-            <div className="w-10 h-10 rounded-[5px] border-2 border-white shadow-sm overflow-hidden">
+            <div className="w-10 h-10 rounded-[5px] border-2 border-[#1E1E2E] shadow-sm overflow-hidden">
               <img src="https://picsum.photos/seed/admin/100/100" alt="Avatar" referrerPolicy="no-referrer" />
             </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-10 bg-[#F9F9F9] pb-40 flex flex-col items-center">
+        <div className="flex-1 overflow-y-auto p-10 bg-[#1A1A24] pb-40 flex flex-col items-center">
           <div className="w-full transition-all duration-300 ease-in-out flex justify-center">
             <AnimatePresence mode="wait">
               <motion.div
@@ -359,7 +352,7 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className={`bg-white rounded-[5px] p-10 shadow-sm border border-[#E5E5E5] transition-all duration-300 ${(activeTab === 'name-title' && data.nameTitles.length > 1) ||
+                className={`bg-[#222330] rounded-[5px] p-10 shadow-sm border border-[#32364E] transition-all duration-300 ${(activeTab === 'name-title' && data.nameTitles.length > 1) ||
                   (activeTab === 'keyword' && data.keywords.length > 1) ||
                   (activeTab === 'image' && data.images.length > 1)
                   ? 'max-w-6xl w-full'
@@ -368,7 +361,7 @@ export default function App() {
               >
                 <div className="mb-8 flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight mb-2">
+                    <h2 className="text-2xl font-bold tracking-tight mb-2 text-white">
                       {tabs.find(t => t.id === activeTab)?.label}
                     </h2>
                   </div>
@@ -379,7 +372,7 @@ export default function App() {
                           activeTab === 'keyword' ? addKeyword :
                             addImageEntry
                       }
-                      className="p-3 bg-[#1A1A1A] text-white rounded-[5px] hover:bg-black transition-all shadow-md active:scale-95"
+                      className="p-3 bg-[#FAC800] text-black rounded-[5px] hover:bg-[#e5b600] transition-all shadow-md active:scale-95"
                       title="Add New Entry"
                     >
                       <Plus className="w-5 h-5" />
@@ -391,44 +384,44 @@ export default function App() {
                   {activeTab === 'name-title' && (
                     <div className={`grid gap-6 transition-all duration-300 ${data.nameTitles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                       {data.nameTitles.map((item, index) => (
-                        <div key={index} className="relative p-6 bg-[#F9F9F9] rounded-[5px] border border-[#E5E5E5] space-y-6">
+                        <div key={index} className="relative p-6 bg-[#1E1E2E] rounded-[5px] border border-[#32364E] space-y-6">
                           {data.nameTitles.length > 1 && (
                             <button
                               onClick={() => removeNameTitle(index)}
-                              className="absolute -top-3 -right-3 p-2 bg-white border border-[#E5E5E5] text-red-500 rounded-[5px] hover:bg-red-50 transition-all shadow-sm z-20"
+                              className="absolute -top-3 -right-3 p-2 bg-[#222330] border border-[#32364E] text-red-500 rounded-[5px] hover:bg-red-500/10 transition-all shadow-sm z-20"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                           <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-[#9E9E9E]">Name {index + 1}</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-[#646882]">Name {index + 1}</label>
                             <input
                               type="text"
                               value={item.name}
                               onChange={(e) => handleNameTitleChange(index, 'name', e.target.value)}
                               placeholder="Enter Person Name"
-                              className="w-full px-5 py-4 bg-white border border-[#E5E5E5] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A] transition-all"
+                              className="w-full px-5 py-4 bg-[#16161F] border border-[#454964] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#FAC800]/20 focus:border-[#FAC800] transition-all text-white placeholder-[#646882]"
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
-                              <label className="text-xs font-bold uppercase tracking-wider text-[#9E9E9E]">Title 1</label>
+                              <label className="text-xs font-bold uppercase tracking-wider text-[#646882]">Title 1</label>
                               <input
                                 type="text"
                                 value={item.title1}
                                 onChange={(e) => handleNameTitleChange(index, 'title1', e.target.value)}
                                 placeholder="Primary title..."
-                                className="w-full px-5 py-4 bg-white border border-[#E5E5E5] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A] transition-all"
+                                className="w-full px-5 py-4 bg-[#16161F] border border-[#454964] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#FAC800]/20 focus:border-[#FAC800] transition-all text-white placeholder-[#646882]"
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-xs font-bold uppercase tracking-wider text-[#9E9E9E]">Title 2</label>
+                              <label className="text-xs font-bold uppercase tracking-wider text-[#646882]">Title 2</label>
                               <input
                                 type="text"
                                 value={item.title2}
                                 onChange={(e) => handleNameTitleChange(index, 'title2', e.target.value)}
                                 placeholder="Secondary title..."
-                                className="w-full px-5 py-4 bg-white border border-[#E5E5E5] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A] transition-all"
+                                className="w-full px-5 py-4 bg-[#16161F] border border-[#454964] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#FAC800]/20 focus:border-[#FAC800] transition-all text-white placeholder-[#646882]"
                               />
                             </div>
                           </div>
@@ -440,21 +433,21 @@ export default function App() {
                   {activeTab === 'keyword' && (
                     <div className={`grid gap-6 transition-all duration-300 ${data.keywords.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                       {data.keywords.map((keyword, index) => (
-                        <div key={index} className="relative flex gap-4 items-start bg-[#F9F9F9] p-6 rounded-[5px] border border-[#E5E5E5]">
+                        <div key={index} className="relative flex gap-4 items-start bg-[#1E1E2E] p-6 rounded-[5px] border border-[#32364E]">
                           <div className="flex-1 space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-[#9E9E9E]">Keyword {index + 1}</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-[#646882]">Keyword {index + 1}</label>
                             <textarea
                               value={keyword}
                               onChange={(e) => handleKeywordChange(index, e.target.value)}
                               rows={2}
                               placeholder="Enter text"
-                              className="w-full px-5 py-3 bg-white border border-[#E5E5E5] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A] transition-all resize-none text-sm"
+                              className="w-full px-5 py-3 bg-[#16161F] border border-[#454964] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#FAC800]/20 focus:border-[#FAC800] transition-all resize-none text-sm text-white placeholder-[#646882]"
                             />
                           </div>
                           {data.keywords.length > 1 && (
                             <button
                               onClick={() => removeKeyword(index)}
-                              className="p-3 bg-white border border-[#E5E5E5] text-red-500 rounded-[5px] hover:bg-red-50 transition-all shadow-sm"
+                              className="p-3 bg-[#222330] border border-[#32364E] text-red-500 rounded-[5px] hover:bg-red-500/10 transition-all shadow-sm"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -467,43 +460,43 @@ export default function App() {
                   {activeTab === 'image' && (
                     <div className={`grid gap-6 transition-all duration-300 ${data.images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                       {data.images.map((item, index) => (
-                        <div key={index} className="relative p-6 bg-[#F9F9F9] rounded-[5px] border border-[#E5E5E5] space-y-6">
+                        <div key={index} className="relative p-6 bg-[#1E1E2E] rounded-[5px] border border-[#32364E] space-y-6">
                           {data.images.length > 1 && (
                             <button
                               onClick={() => removeImageEntry(index)}
-                              className="absolute -top-3 -right-3 p-2 bg-white border border-[#E5E5E5] text-red-500 rounded-[5px] hover:bg-red-50 transition-all shadow-sm z-20"
+                              className="absolute -top-3 -right-3 p-2 bg-[#222330] border border-[#32364E] text-red-500 rounded-[5px] hover:bg-red-500/10 transition-all shadow-sm z-20"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                           <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
-                              <label className="text-xs font-bold uppercase tracking-wider text-[#9E9E9E]">Aspect Ratio {index + 1} *</label>
+                              <label className="text-xs font-bold uppercase tracking-wider text-[#646882]">Aspect Ratio {index + 1} *</label>
                               <select
                                 value={item.aspectRatio}
                                 onChange={(e) => handleImageEntryChange(index, 'aspectRatio', e.target.value)}
                                 required
-                                className="w-full px-5 py-4 bg-white border border-[#E5E5E5] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A] transition-all appearance-none"
+                                className="w-full px-5 py-4 bg-[#16161F] border border-[#454964] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#FAC800]/20 focus:border-[#FAC800] transition-all appearance-none text-white"
                               >
-                                <option value="" disabled>Select Ratio</option>
+                                <option value="" disabled className="text-[#646882]">Select Ratio</option>
                                 <option value="Vertical">Vertical (9:16)</option>
                                 <option value="Horizontal">Horizontal (16:9)</option>
                                 <option value="Square">Square (1:1)</option>
                               </select>
                             </div>
                             <div className="space-y-2">
-                              <label className="text-xs font-bold uppercase tracking-wider text-[#9E9E9E]">Image Source</label>
+                              <label className="text-xs font-bold uppercase tracking-wider text-[#646882]">Image Source</label>
                               <input
                                 type="text"
                                 value={item.source}
                                 onChange={(e) => handleImageEntryChange(index, 'source', e.target.value)}
                                 placeholder="e.g. Getty Images..."
-                                className="w-full px-5 py-4 bg-white border border-[#E5E5E5] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A] transition-all"
+                                className="w-full px-5 py-4 bg-[#16161F] border border-[#454964] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#FAC800]/20 focus:border-[#FAC800] transition-all text-white placeholder-[#646882]"
                               />
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-[#9E9E9E]">Project Image</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-[#646882]">Project Image</label>
                             <div className="relative group">
                               <input
                                 type="file"
@@ -514,12 +507,12 @@ export default function App() {
                                 }}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                               />
-                              <div className="w-full py-12 border-2 border-dashed border-[#E5E5E5] rounded-[5px] flex flex-col items-center justify-center bg-white group-hover:bg-[#F0F0F0] transition-all">
-                                <ImageIcon className="w-10 h-10 text-[#9E9E9E] mb-3" />
-                                <p className="text-sm font-medium text-[#616161]">
+                              <div className="w-full py-12 border-2 border-dashed border-[#454964] rounded-[5px] flex flex-col items-center justify-center bg-[#16161F] group-hover:bg-[#1A1A24] transition-all">
+                                <ImageIcon className="w-10 h-10 text-[#646882] mb-3 group-hover:text-[#FAC800] transition-colors" />
+                                <p className="text-sm font-medium text-[#8F95B2]">
                                   {item.file ? item.file.name : 'Click or drag to upload image'}
                                 </p>
-                                <p className="text-[10px] text-[#9E9E9E] mt-1 uppercase font-bold tracking-widest">PNG, JPG up to 10MB</p>
+                                <p className="text-[10px] text-[#646882] mt-1 uppercase font-bold tracking-widest">PNG, JPG up to 10MB</p>
                               </div>
                             </div>
                           </div>
@@ -536,28 +529,28 @@ export default function App() {
 
 
         {/* Static Bottom Section */}
-        <div className="absolute bottom-0 left-72 right-0 bg-white border-t border-[#E5E5E5] p-8 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-20">
+        <div className="absolute bottom-0 left-72 right-0 bg-[#222330] border-t border-[#32364E] p-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-20">
           <div className="max-w-6xl mx-auto flex gap-4 items-end transition-all duration-300">
             <div className="flex-1 space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#616161]">Slug Name</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-[#8F95B2]">Slug Name</label>
               <input
                 type="text"
                 name="slugName"
                 value={data.slugName}
                 onChange={handleInputChange}
                 placeholder="e.g. news-header-v1"
-                className="w-full px-5 py-4 bg-[#EBEBEB] border border-[#BDBDBD] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A] transition-all font-mono text-sm"
+                className="w-full px-5 py-4 bg-[#16161F] border border-[#454964] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#FAC800]/20 focus:border-[#FAC800] transition-all font-mono text-sm text-white placeholder-[#646882]"
               />
             </div>
             <div className="w-64 space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#616161]">Project Aspect Ratio</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-[#8F95B2]">Project Aspect Ratio</label>
               <select
                 name="projectAspectRatio"
                 value={data.projectAspectRatio}
                 onChange={handleInputChange}
-                className="w-full px-5 py-4 bg-[#EBEBEB] border border-[#BDBDBD] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A] transition-all appearance-none text-sm"
+                className="w-full px-5 py-4 bg-[#16161F] border border-[#454964] rounded-[5px] focus:outline-none focus:ring-2 focus:ring-[#FAC800]/20 focus:border-[#FAC800] transition-all appearance-none text-sm text-white"
               >
-                <option value="" disabled>Select Ratio</option>
+                <option value="" disabled className="text-[#646882]">Select Ratio</option>
                 <option value="Vertical">Vertical (9:16)</option>
                 <option value="Horizontal">Horizontal (16:9)</option>
                 <option value="Square">Square (1:1)</option>
@@ -566,8 +559,8 @@ export default function App() {
             <button
               onClick={handleRender}
               disabled={isRendering}
-              className={`px-10 py-4 rounded-[5px] font-bold text-sm flex items-center gap-3 transition-all shadow-lg shadow-black/5 h-[58px] ${isRendering
-                  ? 'bg-[#E5E5E5] text-[#9E9E9E] cursor-not-allowed'
+              className={`px-10 py-4 rounded-[5px] font-bold text-sm flex items-center gap-3 transition-all shadow-lg shadow-black/20 h-[58px] ${isRendering
+                  ? 'bg-[#32364E] text-[#646882] cursor-not-allowed'
                   : 'bg-[#fac800] text-black hover:bg-[#e5b600] active:scale-95'
                 }`}
             >

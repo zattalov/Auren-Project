@@ -27,7 +27,7 @@ function toAEPath(winPath) {
     return winPath.replace(/\\/g, '/');
 }
 
-function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
+function generateExtendScript({ aepPath, projectDir, outputDir, data, settings }) {
     const aepPathAE = toAEPath(aepPath);
     const projectDirAE = toAEPath(projectDir);
     const outputDirAE = toAEPath(outputDir);
@@ -35,6 +35,15 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
     const nameTitles = data.nameTitles || [];
     const keywords = data.keywords || [];
     const images = data.images || [];
+
+    // Fallback if settings isn't passed for some reason
+    if (!settings) {
+        settings = {
+            nameTitle: { compName: 'lower-third', layerName_name: 'name', layerName_title1: 'title1', layerName_title2: 'title2' },
+            keyword: { compName: 'keyword', layerName_keyword: 'Keyword_text' },
+            image: { compName: 'image', layerName_source: 'source', footageName: 'sample image.png' }
+        };
+    }
 
     // We will dynamically push duplicate compositions during processing
     const compsToRender = [];
@@ -119,7 +128,7 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
 
     // ── FILL LOWER-THIRD ──
     if (nameTitles.length > 0) {
-        lines.push('    var baseLowerThird = findComp("lower-third");');
+        lines.push('    var baseLowerThird = findComp("' + escapeForJsx(settings.nameTitle.compName) + '");');
         lines.push('    if (baseLowerThird) {');
         for (let i = 0; i < nameTitles.length; i++) {
             const nt = nameTitles[i];
@@ -128,9 +137,9 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
             const dupName = `lower-third_${i + 1}`;
             lines.push(`        var dupNT_${i} = baseLowerThird.duplicate();`);
             lines.push(`        dupNT_${i}.name = "${dupName}";`);
-            lines.push(`        setTextLayerValue(dupNT_${i}, "name", "${escapeForJsx(nt.name || '')}");`);
-            lines.push(`        setTextLayerValue(dupNT_${i}, "title1", "${escapeForJsx(nt.title1 || '')}");`);
-            lines.push(`        setTextLayerValue(dupNT_${i}, "title2", "${escapeForJsx(nt.title2 || '')}");`);
+            lines.push(`        setTextLayerValue(dupNT_${i}, "${escapeForJsx(settings.nameTitle.layerName_name)}", "${escapeForJsx(nt.name || '')}");`);
+            lines.push(`        setTextLayerValue(dupNT_${i}, "${escapeForJsx(settings.nameTitle.layerName_title1)}", "${escapeForJsx(nt.title1 || '')}");`);
+            lines.push(`        setTextLayerValue(dupNT_${i}, "${escapeForJsx(settings.nameTitle.layerName_title2)}", "${escapeForJsx(nt.title2 || '')}");`);
             lines.push(`        $.writeln("AUREN: lower-third duplicated for ${dupName}");`);
             
             compsToRender.push({ compName: dupName, outputName: `lower-third-${i + 1}` });
@@ -143,7 +152,7 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
 
     // ── FILL KEYWORD ──
     if (keywords.length > 0) {
-        lines.push('    var baseKeyword = findComp("keyword");');
+        lines.push('    var baseKeyword = findComp("' + escapeForJsx(settings.keyword.compName) + '");');
         lines.push('    if (baseKeyword) {');
         for (let i = 0; i < keywords.length; i++) {
             const kw = keywords[i];
@@ -152,7 +161,7 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
             const dupName = `keyword_${i + 1}`;
             lines.push(`        var dupKW_${i} = baseKeyword.duplicate();`);
             lines.push(`        dupKW_${i}.name = "${dupName}";`);
-            lines.push(`        setTextLayerValue(dupKW_${i}, "Keyword_text", "${escapeForJsx(kw)}");`);
+            lines.push(`        setTextLayerValue(dupKW_${i}, "${escapeForJsx(settings.keyword.layerName_keyword)}", "${escapeForJsx(kw)}");`);
             lines.push(`        $.writeln("AUREN: keyword duplicated for ${dupName}");`);
             
             compsToRender.push({ compName: dupName, outputName: `keyword-${i + 1}` });
@@ -165,7 +174,7 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
 
     // ── FILL IMAGE COMP ──
     if (images.length > 0) {
-        lines.push('    var baseImageComp = findComp("image");');
+        lines.push('    var baseImageComp = findComp("' + escapeForJsx(settings.image.compName) + '");');
         lines.push('    if (baseImageComp) {');
         for (let i = 0; i < images.length; i++) {
             const img = images[i];
@@ -184,7 +193,7 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
                 lines.push(`            var targetLayer_${i} = null;`);
                 lines.push(`            for(var j=1; j<=dupIMG_${i}.numLayers; j++) {`);
                 lines.push(`                var lay = dupIMG_${i}.layer(j);`);
-                lines.push(`                if(lay.source && lay.source.name === "sample image.png") { targetLayer_${i} = lay; break; }`);
+                lines.push(`                if(lay.source && lay.source.name === "${escapeForJsx(settings.image.footageName)}") { targetLayer_${i} = lay; break; }`);
                 lines.push(`            }`);
                 lines.push(`            if (targetLayer_${i}) {`);
                 lines.push(`                targetLayer_${i}.replaceSource(newFootage_${i}, false);`);
@@ -194,7 +203,7 @@ function generateExtendScript({ aepPath, projectDir, outputDir, data }) {
             }
 
             if (img.source) {
-                lines.push(`        setTextLayerValue(dupIMG_${i}, "source", "${escapeForJsx(img.source || '')}");`);
+                lines.push(`        setTextLayerValue(dupIMG_${i}, "${escapeForJsx(settings.image.layerName_source)}", "${escapeForJsx(img.source || '')}");`);
             }
             
             compsToRender.push({ compName: dupName, outputName: `image-${i + 1}` });
